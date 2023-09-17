@@ -1,6 +1,8 @@
 package container
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"encoding/json"
 	"fmt"
 	nettypes "github.com/containers/common/libnetwork/types"
@@ -9,8 +11,6 @@ import (
 	"github.com/mattn/go-shellwords"
 	spec "github.com/opencontainers/runtime-spec/specs-go"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 )
 
 type volumeReq struct {
@@ -94,6 +94,8 @@ func Create(w http.ResponseWriter, req *http.Request) {
 		s.PortMappings = ports
 	}
 
+	createCmd = append(createCmd, c.Image)
+
 	if c.Command != "" {
 		cmds, err := shellwords.Parse(c.Command)
 		if err != nil {
@@ -110,6 +112,8 @@ func Create(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Sprintf("Cannot create container: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	_ = containers.Start(pmConn, ret.ID, nil)
 
 	utils.Return(w, ret)
 }

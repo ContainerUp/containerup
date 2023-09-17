@@ -1,6 +1,8 @@
 package container
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,13 +10,16 @@ import (
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/gorilla/mux"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 	"strings"
 )
 
+var (
+	errInvalidRepoTag = errors.New("invalid repo:tag value")
+)
+
 type action struct {
-	Action string `json:"action"`
+	Action  string `json:"action"`
+	RepoTag string `json:"repoTag"`
 }
 
 func Action(w http.ResponseWriter, req *http.Request) {
@@ -38,13 +43,22 @@ func Action(w http.ResponseWriter, req *http.Request) {
 		err = start(pmConn, nameOrId)
 	case "remove":
 		err = remove(pmConn, nameOrId)
+	case "commit":
+		err = commit(pmConn, nameOrId, act.RepoTag)
 	default:
 		http.Error(w, "unrecognized action", http.StatusBadRequest)
 		return
 	}
 
 	if err != nil {
-		// TODO 4xx errors
+		if utils.IsErr404(err) {
+			http.Error(w, "Cannot find such container", http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, errInvalidRepoTag) {
+			http.Error(w, "Invalid repository[:tag] value", http.StatusBadRequest)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -86,4 +100,20 @@ func remove(ctx context.Context, nameOrID string) error {
 	}
 
 	return nil
+}
+
+func commit(ctx context.Context, nameOrID, repoTag string) error {
+	parts := strings.Split(repoTag, ":")
+	if len(parts) == 0 || len(parts) > 2 {
+		return errInvalidRepoTag
+	}
+
+	commitOpts := &containers.CommitOptions{
+		Repo: &parts[0],
+	}
+	if len(parts) == 2 {
+		commitOpts.Tag = &parts[1]
+	}
+	_, err := containers.Commit(ctx, nameOrID, commitOpts)
+	return err
 }

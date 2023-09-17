@@ -1,15 +1,15 @@
 package image
 
 import (
+	"containerup/conn"
+	"containerup/login"
+	"containerup/utils"
 	"context"
 	"github.com/containers/podman/v4/pkg/bindings/images"
 	"github.com/gorilla/websocket"
 	"io"
 	"log"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/login"
-	"podmanman/utils"
 	"sync"
 )
 
@@ -105,8 +105,8 @@ func pullStatusTransmitter(pmConn context.Context, ws *websocket.Conn, progressR
 	})
 
 	// empty reader
+	wgWsReader.Add(1)
 	go func() {
-		wgWsReader.Add(1)
 		defer wgWsReader.Done()
 
 		var err error
@@ -115,8 +115,8 @@ func pullStatusTransmitter(pmConn context.Context, ws *websocket.Conn, progressR
 		}
 	}()
 
+	wgWsWriter.Add(1)
 	go func() {
-		wgWsWriter.Add(1)
 		defer wgWsWriter.Done()
 
 		var err error
@@ -130,8 +130,8 @@ func pullStatusTransmitter(pmConn context.Context, ws *websocket.Conn, progressR
 		stopByClient(err)
 	}()
 
+	wgOutputReader.Add(1)
 	go func() {
-		wgOutputReader.Add(1)
 		defer wgOutputReader.Done()
 
 		var err error

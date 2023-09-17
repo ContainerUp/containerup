@@ -1,16 +1,15 @@
 package system
 
 import (
+	"containerup/conn"
+	"containerup/login"
+	"containerup/utils"
 	"context"
-	"github.com/containers/podman/v4/pkg/bindings"
 	"github.com/containers/podman/v4/pkg/bindings/system"
 	"github.com/containers/podman/v4/pkg/domain/entities"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/login"
-	"podmanman/utils"
 	"sync"
 )
 
@@ -20,8 +19,9 @@ var (
 
 func Events(w http.ResponseWriter, req *http.Request) {
 	pmConn := conn.GetConn(req.Context())
+	query := req.URL.Query()
 
-	eventType := req.URL.Query().Get("type")
+	eventType := query.Get("type")
 	switch eventType {
 	case "container":
 	case "image":
@@ -29,6 +29,7 @@ func Events(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Invalid event type", http.StatusBadRequest)
 		return
 	}
+	id := query.Get("id")
 
 	ws, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
@@ -40,7 +41,11 @@ func Events(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	pmConn, stopByServer, waitEnd, chEvent := eventsSender(pmConn, ws)
+	if query.Get("needOkResp") == "1" {
+		_ = ws.WriteMessage(websocket.TextMessage, []byte("true"))
+	}
+
+	pmConn, stopByServer, waitEnd, chEvent := eventsSender(pmConn, ws, id)
 
 	err = system.Events(pmConn, chEvent, nil, &system.EventsOptions{
 		Filters: map[string][]string{
@@ -59,7 +64,7 @@ type event struct {
 	Name   string `json:"name"`
 }
 
-func eventsSender(pmConn context.Context, ws *websocket.Conn) (context.Context, func(error), func(), chan entities.Event) {
+func eventsSender(pmConn context.Context, ws *websocket.Conn, id string) (context.Context, func(error), func(), chan entities.Event) {
 	pmConn, cancel := context.WithCancel(pmConn)
 
 	var wgWsReader, wgWsWriter, wgOutputReader sync.WaitGroup
@@ -140,40 +145,21 @@ func eventsSender(pmConn context.Context, ws *websocket.Conn) (context.Context, 
 		defer wgOutputReader.Done()
 
 		for e := range chEvent {
+			eId := e.Actor.ID
+			if id != "" {
+				if (len(id) == 12 && eId[0:12] != id) || eId != id {
+					continue
+				}
+			}
+
 			chWrite <- &event{
 				Type:   e.Type,
 				Action: e.Status,
-				Id:     e.Actor.ID,                 // container, image
+				Id:     eId,                        // container, image
 				Name:   e.Actor.Attributes["name"], // container, image
 			}
 		}
 	}()
 
 	return pmConn, stopByServer, waitEnd, chEvent
-}
-
-func GetEvents(uri string) {
-	ch := make(chan entities.Event)
-
-	go func() {
-		for event := range ch {
-			log.Printf("event: from %s status %s type %s actorId %s attr %v", event.From, event.Status, event.Type, event.Actor.ID, event.Actor.Attributes)
-		}
-		log.Printf("event end")
-	}()
-
-	ctx, err := bindings.NewConnection(context.Background(), uri)
-	if err != nil {
-		log.Printf("Conn err: %v", err)
-		return
-	}
-
-	err = system.Events(ctx, ch, nil, &system.EventsOptions{
-		Filters: map[string][]string{
-			"type": {"container"},
-		},
-	})
-	if err != nil {
-		log.Printf("GetEvents err: %v", err)
-	}
 }

@@ -1,12 +1,12 @@
 package container
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"fmt"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/gorilla/mux"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 )
 
 func Inspect(w http.ResponseWriter, req *http.Request) {

@@ -2,6 +2,9 @@ package container
 
 import (
 	"bufio"
+	"containerup/conn"
+	"containerup/login"
+	"containerup/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -14,9 +17,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/login"
-	"podmanman/utils"
 	"sync"
 )
 
@@ -192,8 +192,8 @@ func execTransmitter(pmConn context.Context, ws *websocket.Conn, sessionId strin
 	})
 
 	if stdInWriter != nil {
+		wgWsReader.Add(1)
 		go func() {
-			wgWsReader.Add(1)
 			defer wgWsReader.Done()
 			// defer stdInWriter.Close() // do not close it, as it closed in containers.ExecStartAndAttach
 
@@ -230,8 +230,8 @@ func execTransmitter(pmConn context.Context, ws *websocket.Conn, sessionId strin
 		}()
 	} else {
 		// empty reader
+		wgWsReader.Add(1)
 		go func() {
-			wgWsReader.Add(1)
 			defer wgWsReader.Done()
 
 			var err error
@@ -241,8 +241,8 @@ func execTransmitter(pmConn context.Context, ws *websocket.Conn, sessionId strin
 		}()
 	}
 
+	wgWsWriter.Add(1)
 	go func() {
-		wgWsWriter.Add(1)
 		defer wgWsWriter.Done()
 
 		var err error
@@ -256,8 +256,8 @@ func execTransmitter(pmConn context.Context, ws *websocket.Conn, sessionId strin
 		stopByClient(err)
 	}()
 
+	wgOutputReader.Add(1)
 	go func() {
-		wgOutputReader.Add(1)
 		defer wgOutputReader.Done()
 
 		var err error
@@ -276,8 +276,8 @@ func execTransmitter(pmConn context.Context, ws *websocket.Conn, sessionId strin
 		//log.Printf("stdOutReader err: %v", err)
 	}()
 
+	wgOutputReader.Add(1)
 	go func() {
-		wgOutputReader.Add(1)
 		defer wgOutputReader.Done()
 
 		var err error

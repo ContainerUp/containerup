@@ -1,4 +1,4 @@
-module podmanman
+module containerup
 
 go 1.19
 

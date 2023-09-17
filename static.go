@@ -3,13 +3,14 @@ package main
 import (
 	"embed"
 	"github.com/gorilla/mux"
+	"io/fs"
 	"net/http"
 )
 
-//go:embed web
+//go:embed web/*
 var staticContents embed.FS
 
-var staticPaths = []string{
+var spaPaths = []string{
 	"/",
 	"/containers",
 	"/containers/{any:.+}",
@@ -21,15 +22,35 @@ var staticPaths = []string{
 	"/logout",
 }
 
-func handleIndex(writer http.ResponseWriter, request *http.Request) {
-	d, _ := staticContents.ReadFile("index.html")
-	writer.Write(d)
+var staticFiles = []string{
+	"robots.txt",
+	"favicon.png",
+}
+
+func handleFile(fileName string) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		d, err := staticContents.ReadFile("web/" + fileName)
+		if err != nil {
+			http.NotFound(writer, request)
+			return
+		}
+		writer.Write(d)
+	}
 }
 
 func registerStaticFiles(r *mux.Router) {
-	r.PathPrefix("/static/").Handler(http.FileServer(http.FS(staticContents)))
+	sub, err := fs.Sub(staticContents, "web")
+	if err != nil {
+		panic(err)
+	}
 
-	for _, path := range staticPaths {
-		r.HandleFunc(path, handleIndex)
+	r.PathPrefix("/static/").Handler(http.FileServer(http.FS(sub)))
+
+	for _, path := range spaPaths {
+		r.HandleFunc(path, handleFile("index.html"))
+	}
+
+	for _, path := range staticFiles {
+		r.HandleFunc("/"+path, handleFile(path))
 	}
 }

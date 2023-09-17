@@ -64,6 +64,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	result := fmt.Sprintf("%x", sha256.Sum256([]byte(str)))
 
 	if result != pwd {
+		time.Sleep(time.Second * 3)
 		http.Error(w, "invalid credentials", http.StatusUnauthorized)
 		return
 	}

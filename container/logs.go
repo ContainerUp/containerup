@@ -1,15 +1,15 @@
 package container
 
 import (
+	"containerup/conn"
+	"containerup/login"
+	"containerup/utils"
 	"context"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/login"
-	"podmanman/utils"
 	"sync"
 )
 
@@ -108,8 +108,8 @@ func logsSender(pmConn context.Context, ws *websocket.Conn) (context.Context, fu
 	})
 
 	// empty read
+	wgWsReader.Add(1)
 	go func() {
-		wgWsReader.Add(1)
 		defer wgWsReader.Done()
 
 		var err error
@@ -119,8 +119,8 @@ func logsSender(pmConn context.Context, ws *websocket.Conn) (context.Context, fu
 		//log.Printf("ws reader err: %v", err)
 	}()
 
+	wgWsWriter.Add(1)
 	go func() {
-		wgWsWriter.Add(1)
 		defer wgWsWriter.Done()
 
 		var err error
@@ -134,8 +134,8 @@ func logsSender(pmConn context.Context, ws *websocket.Conn) (context.Context, fu
 		stopByClient(err)
 	}()
 
+	wgOutputReader.Add(1)
 	go func() {
-		wgOutputReader.Add(1)
 		defer wgOutputReader.Done()
 
 		for msg := range chStdOut {
@@ -143,8 +143,8 @@ func logsSender(pmConn context.Context, ws *websocket.Conn) (context.Context, fu
 		}
 	}()
 
+	wgOutputReader.Add(1)
 	go func() {
-		wgOutputReader.Add(1)
 		defer wgOutputReader.Done()
 
 		for msg := range chStdErr {

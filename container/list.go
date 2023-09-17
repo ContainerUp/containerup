@@ -1,10 +1,10 @@
 package container
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 )
 
 func List(w http.ResponseWriter, req *http.Request) {

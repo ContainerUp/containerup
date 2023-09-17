@@ -1,10 +1,10 @@
 package image
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"github.com/containers/podman/v4/pkg/bindings/images"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 	"sort"
 )
 

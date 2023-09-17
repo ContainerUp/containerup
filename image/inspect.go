@@ -1,12 +1,12 @@
 package image
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"fmt"
 	"github.com/containers/podman/v4/pkg/bindings/images"
 	"github.com/gorilla/mux"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 )
 
 func Inspect(w http.ResponseWriter, req *http.Request) {

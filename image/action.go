@@ -1,15 +1,19 @@
 package image
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"context"
 	"encoding/json"
 	"errors"
 	"github.com/containers/podman/v4/pkg/bindings/images"
 	"github.com/gorilla/mux"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 	"strings"
+)
+
+var (
+	errInvalidRepoTag = errors.New("invalid repo:tag value")
 )
 
 type action struct {
@@ -31,9 +35,10 @@ func Action(w http.ResponseWriter, req *http.Request) {
 
 	pmConn := conn.GetConn(req.Context())
 
+	ret := any(true)
 	switch act.Action {
 	case "remove":
-		err = remove(pmConn, imageId, act.RepoTag)
+		ret, err = remove(pmConn, imageId, act.RepoTag)
 	case "tag":
 		err = tag(pmConn, imageId, act.RepoTag)
 	default:
@@ -42,36 +47,53 @@ func Action(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		// TODO 4xx errors
+		if utils.IsErr404(err) {
+			http.Error(w, "Cannot find such image", http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, errInvalidRepoTag) {
+			http.Error(w, "Invalid repository[:tag] value", http.StatusBadRequest)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	utils.Return(w, true)
+	utils.Return(w, ret)
 }
 
-func remove(ctx context.Context, nameOrID, tag string) error {
+func remove(ctx context.Context, nameOrID, tag string) (any, error) {
 	if tag != "" {
 		nameOrID = tag
 	}
 
-	_, errs := images.Remove(ctx, []string{nameOrID}, nil)
+	ret, errs := images.Remove(ctx, []string{nameOrID}, nil)
 	if len(errs) > 0 {
 		errStr := ""
 		for _, e := range errs {
 			errStr += e.Error()
 		}
-		return errors.New(errStr)
+		return "", errors.New(errStr)
 	}
 
-	return nil
+	result := "untagged"
+	if len(ret.Deleted) > 0 {
+		result = "removed"
+	}
+
+	return result, nil
 }
 
 func tag(ctx context.Context, nameOrId, repoTag string) error {
 	parts := strings.Split(repoTag, ":")
-	if len(parts) != 2 {
-		return errors.New("invalid repo:tag value")
+	if len(parts) == 0 || len(parts) > 2 {
+		return errInvalidRepoTag
 	}
 
-	return images.Tag(ctx, nameOrId, parts[1], parts[0], nil)
+	tag := ""
+	if len(parts) == 2 {
+		tag = parts[1]
+	}
+
+	return images.Tag(ctx, nameOrId, tag, parts[0], nil)
 }

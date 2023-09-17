@@ -1,10 +1,10 @@
 package system
 
 import (
+	"containerup/conn"
+	"containerup/utils"
 	"github.com/containers/podman/v4/pkg/bindings/system"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/utils"
 )
 
 func Info(w http.ResponseWriter, req *http.Request) {

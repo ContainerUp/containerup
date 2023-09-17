@@ -1,15 +1,16 @@
 package main
 
 import (
+	"containerup/conn"
+	"containerup/container"
+	"containerup/image"
+	"containerup/login"
+	"containerup/system"
+	"containerup/wsrouter"
 	"flag"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"podmanman/conn"
-	"podmanman/container"
-	"podmanman/image"
-	"podmanman/login"
-	"podmanman/system"
 	"time"
 )
 
@@ -20,8 +21,9 @@ var (
 )
 
 var (
-	timeout   = 2 * time.Minute
-	wsTimeout = 60 * time.Minute
+	timeout       = 2 * time.Minute
+	wsTimeout     = 60 * time.Minute
+	wsLongTimeout = 8 * time.Hour
 )
 
 func main() {
@@ -29,26 +31,27 @@ func main() {
 	login.InitPassword(*fPassword)
 	conn.InitUri(*fPodman)
 
-	go system.GetEvents(*fPodman)
-
 	r := mux.NewRouter()
-	s := r.PathPrefix("/api").Subrouter()
+	api := r.PathPrefix("/api").Subrouter()
 
-	s.HandleFunc("/login", login.Login).Methods(http.MethodPost)
+	api.HandleFunc("/login", login.Login).Methods(http.MethodPost)
 
-	s.HandleFunc("/container", login.Guard(conn.Connection(container.List, timeout))).Methods(http.MethodGet)
-	s.HandleFunc("/container", login.Guard(conn.Connection(container.Create, timeout))).Methods(http.MethodPost)
-	s.HandleFunc("/container/{name}/inspect", login.Guard(conn.Connection(container.Inspect, timeout))).Methods(http.MethodGet)
-	s.HandleFunc("/container/{name}/logs", conn.Connection(container.Logs, wsTimeout)).Methods(http.MethodGet)
-	s.HandleFunc("/container/{name}/exec", conn.Connection(container.Exec, wsTimeout)).Methods(http.MethodGet)
-	s.HandleFunc("/container/{name}", login.Guard(conn.Connection(container.Action, timeout))).Methods(http.MethodPost)
+	api.HandleFunc("/container", login.Guard(conn.Connection(container.List, timeout))).Methods(http.MethodGet)
+	api.HandleFunc("/container", login.Guard(conn.Connection(container.Create, timeout))).Methods(http.MethodPost)
+	api.HandleFunc("/container/{name}/inspect", login.Guard(conn.Connection(container.Inspect, timeout))).Methods(http.MethodGet)
+	api.HandleFunc("/container/{name}/logs", conn.Connection(container.Logs, wsTimeout)).Methods(http.MethodGet)
+	api.HandleFunc("/container/{name}/exec", conn.Connection(container.Exec, wsTimeout)).Methods(http.MethodGet)
+	api.HandleFunc("/container/{name}", login.Guard(conn.Connection(container.Action, timeout))).Methods(http.MethodPost)
 
-	s.HandleFunc("/image", login.Guard(conn.Connection(image.List, timeout))).Methods(http.MethodGet)
-	s.HandleFunc("/image/pull", conn.Connection(image.Pull, wsTimeout)).Methods(http.MethodGet)
-	s.HandleFunc("/image/{name}/inspect", login.Guard(conn.Connection(image.Inspect, timeout))).Methods(http.MethodGet)
-	s.HandleFunc("/image/{name}", login.Guard(conn.Connection(image.Action, timeout))).Methods(http.MethodPost)
+	api.HandleFunc("/image", login.Guard(conn.Connection(image.List, timeout))).Methods(http.MethodGet)
+	api.HandleFunc("/image/pull", conn.Connection(image.Pull, wsTimeout)).Methods(http.MethodGet)
+	api.HandleFunc("/image/{name}/inspect", login.Guard(conn.Connection(image.Inspect, timeout))).Methods(http.MethodGet)
+	api.HandleFunc("/image/{name}", login.Guard(conn.Connection(image.Action, timeout))).Methods(http.MethodPost)
 
-	s.HandleFunc("/system/info", login.Guard(conn.Connection(system.Info, timeout))).Methods(http.MethodGet)
+	api.HandleFunc("/system/info", login.Guard(conn.Connection(system.Info, timeout))).Methods(http.MethodGet)
+	api.HandleFunc("/system/events", conn.Connection(system.Events, wsTimeout)).Methods(http.MethodGet)
+
+	api.HandleFunc("/subscribe", conn.Connection(wsrouter.Entry, wsLongTimeout)).Methods(http.MethodGet)
 
 	// static files
 	registerStaticFiles(r)
