@@ -5,11 +5,12 @@ import (
 	"containerup/container"
 	"containerup/image"
 	"containerup/login"
-	"containerup/wstypes"
+	"containerup/wsrouter/wstypes"
 	"context"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var (
@@ -65,11 +66,12 @@ func Entry(w http.ResponseWriter, req *http.Request) {
 	go func() {
 		defer wgWriter.Done()
 
-		for {
-			end := false
+		end := false
+		for !end {
 			select {
 			case <-ctx.Done():
 				end = true
+
 			case msg, ok := <-wsWriter:
 				if !ok {
 					end = true
@@ -79,17 +81,20 @@ func Entry(w http.ResponseWriter, req *http.Request) {
 				if err != nil {
 					end = true
 				}
-			}
 
-			if end {
-				go func() {
-					// drop all ws messages to send
-					for range wsWriter {
-					}
-				}()
-				break
+			case <-time.After(20 * time.Second):
+				err := ws.WriteMessage(websocket.PingMessage, nil)
+				if err != nil {
+					end = true
+				}
 			}
 		}
+
+		go func() {
+			// drop all ws messages to send
+			for range wsWriter {
+			}
+		}()
 	}()
 
 	wgReader.Wait()

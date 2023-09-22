@@ -1,11 +1,11 @@
 package login
 
 import (
+	"containerup/utils"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"sync"
 	"time"
@@ -20,8 +20,6 @@ var (
 
 	sessionMap   = make(map[string]*session)
 	sessionMutex sync.Mutex
-
-	randGenerator = rand.NewSource(time.Now().UnixNano())
 )
 
 func init() {
@@ -69,7 +67,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	key := randString(64)
+	key := utils.RandString(64)
 
 	sessionMutex.Lock()
 	sessionMap[key] = &session{
@@ -77,20 +75,5 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	}
 	sessionMutex.Unlock()
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(&struct {
-		Key string `json:"key"`
-	}{
-		Key: key,
-	})
-}
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[randGenerator.Int63()%int64(len(letterBytes))]
-	}
-	return string(b)
+	utils.Return(w, map[string]any{"key": key})
 }

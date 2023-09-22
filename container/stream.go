@@ -1,7 +1,7 @@
 package container
 
 import (
-	"containerup/wstypes"
+	"containerup/wsrouter/wstypes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -47,8 +47,8 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 	var wg sync.WaitGroup
 	ch := make(chan entities.Event)
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		defer cancel()
 
@@ -63,8 +63,8 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 
 		var err error
@@ -194,8 +194,8 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 	var wg sync.WaitGroup
 	ch := make(chan entities.Event)
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		defer cancel()
 
@@ -210,8 +210,8 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 
 		var err error

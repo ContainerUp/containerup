@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var (
@@ -124,13 +125,28 @@ func logsSender(pmConn context.Context, ws *websocket.Conn) (context.Context, fu
 		defer wgWsWriter.Done()
 
 		var err error
-		for msg := range chWrite {
-			err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
-			if err != nil {
-				log.Printf("ws write err: %v", err)
-				break
+		end := false
+		for !end {
+			select {
+			case msg, ok := <-chWrite:
+				if !ok {
+					end = true
+					break
+				}
+				err = ws.WriteMessage(websocket.TextMessage, []byte(msg))
+				if err != nil {
+					log.Printf("ws write err: %v", err)
+					end = true
+				}
+
+			case <-time.After(20 * time.Second):
+				err = ws.WriteMessage(websocket.PingMessage, nil)
+				if err != nil {
+					end = true
+				}
 			}
 		}
+
 		stopByClient(err)
 	}()
 

@@ -1,7 +1,7 @@
 package image
 
 import (
-	"containerup/wstypes"
+	"containerup/wsrouter/wstypes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -45,8 +45,8 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 	var wg sync.WaitGroup
 	ch := make(chan entities.Event)
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		defer cancel()
 
@@ -57,8 +57,8 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 
 		var err error
