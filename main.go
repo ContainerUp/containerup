@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	fListen   = flag.String("listen", ":3876", "address to listen")
+	fListen   = flag.String("listen", "127.0.0.1:3876", "address to listen")
 	fPodman   = flag.String("podman", "unix://run/podman/podman.sock", "uri of podman")
 	fPassword = flag.String("password", "", "sha256 hashed password, generate using command `echo -n \"username:password\" | sha256sum`")
 )
