@@ -66,6 +66,7 @@ jobs:
       - name : Release
         uses: softprops/action-gh-release@v1
         with:
+          fail_on_unmatched_files: true
           files: |
-            containerup-linux-amd64
-            containerup-linux-arm64
+            containerup_linux_amd64
+            containerup_linux_arm64
