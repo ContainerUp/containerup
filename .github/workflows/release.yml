@@ -1,0 +1,67 @@
+name: Build for release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate BUILD number
+        run: |
+          BUILD=$(date -u +%Y%m%d%H%M%S)
+          echo "BUILD=$BUILD"
+          echo "BUILD=$BUILD" >> "$GITHUB_OUTPUT"
+
+  build-frontend:
+    uses: ContainerUp/containerup-web/.github/workflows/release.yml@main
+    needs: metadata
+    with:
+      git_ref: ${{ github.action_ref }}
+      build_num: ${{ needs.metadata.outputs.BUILD }}
+
+  build-backend:
+    runs-on: ubuntu-latest
+    needs: metadata
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.git_ref }}
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.19.0'
+      - name: Copy static files
+        uses: actions/download-artifact@v3
+        with:
+          name: web-build
+          path: web/
+      - name: Build project for linux-amd64
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo "BUILD=${{ needs.metadata.outputs.BUILD }}"
+          echo "COMMIT=${SHA::7}"
+          TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
+          go build -tags "$TAGS" -trimpath -o "containerup-$GOOS-$GOARCH"
+        env:
+          GOARCH: amd64
+          GOOS: linux
+      - name: Build project for linux-arm64
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo "BUILD=${{ needs.metadata.outputs.BUILD }}"
+          echo "COMMIT=${SHA::7}"
+          TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
+          go build -tags "$TAGS" -trimpath -o "containerup-$GOOS-$GOARCH"
+        env:
+          GOARCH: arm64
+          GOOS: linux
+      - name : Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            containerup-linux-amd64
+            containerup-linux-arm64
