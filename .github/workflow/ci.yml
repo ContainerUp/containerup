@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.19.0'
+      - name: Build project
+        run: |
+          TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
+          go build -tags "$TAGS"
