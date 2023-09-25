@@ -18,7 +18,8 @@ import (
 var (
 	fListen   = flag.String("listen", "127.0.0.1:3876", "address to listen")
 	fPodman   = flag.String("podman", "unix://run/podman/podman.sock", "uri of podman")
-	fPassword = flag.String("password", "", "sha256 hashed password, generate using command `echo -n \"username:password\" | sha256sum`")
+	fPassword = flag.String("password", "", "sha256 hashed password, generate `hash` using command 'echo -n \"username:password\" | sha256sum'")
+	fVersion  = flag.Bool("version", false, "show version")
 )
 
 var (
@@ -29,6 +30,10 @@ var (
 
 func main() {
 	flag.Parse()
+	if *fVersion {
+		showVersion()
+	}
+
 	login.InitPassword(*fPassword)
 
 	chainConn, err := conn.ConnectionChainer(*fPodman)

@@ -20,7 +20,7 @@ Then you can start the development of the backend.
 ```shell
 # A lot of tags required by podman
 TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
-go run -tags "$TAGS"
+go run -tags "$TAGS" containerup
 ```
 
 Open your browser, and navigate to http://127.0.0.1:3876/.
@@ -30,7 +30,7 @@ Open your browser, and navigate to http://127.0.0.1:3876/.
 ```shell
 # A lot of tags required by podman
 TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
-go run -tags "$TAGS"
+go run -tags "$TAGS" containerup
 ```
 
 The static web files aren't included, as the frontend repository will do a reverse proxy for you.

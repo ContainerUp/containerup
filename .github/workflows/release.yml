@@ -11,19 +11,22 @@ permissions:
 jobs:
   metadata:
     runs-on: ubuntu-latest
+    outputs:
+      BUILD_NUM: ${{ steps.build_num.outputs.BUILD_NUM }}
     steps:
       - name: Generate BUILD number
+        id: build_num
         run: |
-          BUILD=$(date -u +%Y%m%d%H%M%S)
-          echo "BUILD=$BUILD"
-          echo "BUILD=$BUILD" >> "$GITHUB_OUTPUT"
+          BUILD_NUM=$(date -u +%Y%m%d%H%M%S)
+          echo "BUILD_NUM=$BUILD_NUM"
+          echo "BUILD_NUM=$BUILD_NUM" >> "$GITHUB_OUTPUT"
 
   build-frontend:
     uses: ContainerUp/containerup-web/.github/workflows/release.yml@main
     needs: metadata
     with:
       git_ref: ${{ github.action_ref }}
-      build_num: ${{ needs.metadata.outputs.BUILD }}
+      build_num: ${{ needs.metadata.outputs.BUILD_NUM }}
 
   build-backend:
     runs-on: ubuntu-latest
@@ -42,28 +45,24 @@ jobs:
         with:
           name: web-build
           path: web/
-      - name: Build project for linux-amd64
+      - name: Metadata
         run: |
-          SHA=$(git rev-parse HEAD)
-          echo "BUILD=$BUILD"
-          echo "COMMIT=${SHA::7}"
-          TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
-          go build -tags "$TAGS" -trimpath -o "containerup-$GOOS-$GOARCH"
+          echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> ${GITHUB_ENV}
+          echo "BUILD_NUM=${BUILD_NUM}" >> ${GITHUB_ENV}
+          echo "FE_COMMIT_HASH=${FE_COMMIT_HASH}" >> ${GITHUB_ENV}
+        env:
+          BUILD_NUM: ${{ needs.metadata.outputs.BUILD_NUM }}
+          FE_COMMIT_HASH: ${{ needs.build-frontend.outputs.COMMIT }}
+      - name: Build project for linux-amd64
+        run: ./build.sh
         env:
           GOARCH: amd64
           GOOS: linux
-          BUILD: ${{ needs.metadata.outputs.BUILD }}
       - name: Build project for linux-arm64
-        run: |
-          SHA=$(git rev-parse HEAD)
-          echo "BUILD=$BUILD"
-          echo "COMMIT=${SHA::7}"
-          TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
-          go build -tags "$TAGS" -trimpath -o "containerup-$GOOS-$GOARCH"
+        run: ./build.sh
         env:
           GOARCH: arm64
           GOOS: linux
-          BUILD: ${{ needs.metadata.outputs.BUILD }}
       - name : Release
         uses: softprops/action-gh-release@v1
         with:
