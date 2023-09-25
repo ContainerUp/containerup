@@ -5,6 +5,9 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: write
+
 jobs:
   metadata:
     runs-on: ubuntu-latest
@@ -42,23 +45,25 @@ jobs:
       - name: Build project for linux-amd64
         run: |
           SHA=$(git rev-parse HEAD)
-          echo "BUILD=${{ needs.metadata.outputs.BUILD }}"
+          echo "BUILD=$BUILD"
           echo "COMMIT=${SHA::7}"
           TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
           go build -tags "$TAGS" -trimpath -o "containerup-$GOOS-$GOARCH"
         env:
           GOARCH: amd64
           GOOS: linux
+          BUILD: ${{ needs.metadata.outputs.BUILD }}
       - name: Build project for linux-arm64
         run: |
           SHA=$(git rev-parse HEAD)
-          echo "BUILD=${{ needs.metadata.outputs.BUILD }}"
+          echo "BUILD=$BUILD"
           echo "COMMIT=${SHA::7}"
           TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
           go build -tags "$TAGS" -trimpath -o "containerup-$GOOS-$GOARCH"
         env:
           GOARCH: arm64
           GOOS: linux
+          BUILD: ${{ needs.metadata.outputs.BUILD }}
       - name : Release
         uses: softprops/action-gh-release@v1
         with:
