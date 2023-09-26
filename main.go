@@ -61,7 +61,6 @@ func main() {
 	api.HandleFunc("/image/{name}", chain(chainConn, timeout, image.Action)).Methods(http.MethodPost)
 
 	api.HandleFunc("/system/info", chain(chainConn, timeout, system.Info)).Methods(http.MethodGet)
-	//api.HandleFunc("/system/events", conn.Connection(system.Events, wsTimeout)).Methods(http.MethodGet)
 
 	api.HandleFunc("/subscribe", chainWs(chainConn, wsLongTimeout, wsrouter.Entry)).Methods(http.MethodGet)
 
