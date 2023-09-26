@@ -104,11 +104,7 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 }
 
 func sendList(ctx context.Context, index uint, writer chan<- *wstypes.WsRespMessage) error {
-	yes := true
-	listOpts := &images.ListOptions{
-		All: &yes,
-	}
-	ret, err := images.List(ctx, listOpts)
+	ret, err := images.List(ctx, nil)
 	if err != nil {
 		return err
 	}

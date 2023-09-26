@@ -40,4 +40,3 @@ LDFLAGS=(
 TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
 
 go build -ldflags "${LDFLAGS[*]}" -tags "$TAGS" -trimpath -o "${PACKAGE}_${GOOS}_${GOARCH}"
-ls

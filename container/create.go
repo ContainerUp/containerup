@@ -88,7 +88,7 @@ func Create(w http.ResponseWriter, req *http.Request) {
 					HostPort:      hostPort,
 					Protocol:      p.Protocol,
 				})
-				createCmd = append(createCmd, "--publish", fmt.Sprintf("%d:%d/%s", p.Host, p.Container, p.Protocol))
+				createCmd = append(createCmd, "--publish", fmt.Sprintf("%d:%d/%s", hostPort, p.Container, p.Protocol))
 			}
 		}
 		s.PortMappings = ports

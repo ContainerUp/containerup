@@ -11,11 +11,7 @@ import (
 func List(w http.ResponseWriter, req *http.Request) {
 	pmConn := conn.GetConn(req.Context())
 
-	yes := true
-	listOpts := &images.ListOptions{
-		All: &yes,
-	}
-	ret, err := images.List(pmConn, listOpts)
+	ret, err := images.List(pmConn, nil)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
