@@ -9,9 +9,11 @@ import (
 	"containerup/utils"
 	"containerup/wsrouter"
 	"flag"
+	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -72,6 +74,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+}
+
+func showVersion() {
+	fmt.Printf("ContainerUp version %s commit %s frontend_commit %s build %s\n", system.Version, system.CommitHash, system.FrontendCommitHash, system.BuildNum)
+	os.Exit(0)
 }
 
 func chainLogin(timeout time.Duration, next http.HandlerFunc) http.HandlerFunc {

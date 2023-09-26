@@ -30,10 +30,10 @@ if [[ -z "$GOARCH" ]]; then
 fi
 
 LDFLAGS=(
-  "-X 'main.Version=${VERSION}'"
-  "-X 'main.CommitHash=${COMMIT_HASH}'"
-  "-X 'main.FrontendCommitHash=${FE_COMMIT_HASH}'"
-  "-X 'main.BuildNum=${BUILD_NUM}'"
+  "-X '${PACKAGE}/system.Version=${VERSION}'"
+  "-X '${PACKAGE}/system.CommitHash=${COMMIT_HASH}'"
+  "-X '${PACKAGE}/system.FrontendCommitHash=${FE_COMMIT_HASH}'"
+  "-X '${PACKAGE}/system.BuildNum=${BUILD_NUM}'"
 )
 
 # Podman tags
