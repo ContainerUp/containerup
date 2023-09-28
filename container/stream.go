@@ -74,7 +74,7 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 			case "create":
 				graceCancel = graceSend(ctx, msg.Index, writer, onError)
 
-			case "start", "died", "pause", "unpause", "remove":
+			case "start", "died", "pause", "unpause", "remove", "rename":
 				if graceCancel != nil {
 					graceCancel()
 					graceCancel = nil
@@ -222,7 +222,7 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 			}
 
 			switch event.Action {
-			case "create", "start", "died", "pause", "unpause", "remove":
+			case "create", "start", "died", "pause", "unpause", "remove", "rename":
 				if graceCancel != nil {
 					graceCancel()
 					graceCancel = nil
