@@ -16,8 +16,8 @@ var (
 	subListMap   = map[uint]func(){}
 	subListMutex sync.Mutex
 
-	subMap   = map[uint]func(){}
-	subMutex sync.Mutex
+	subCtnMap   = map[uint]func(){}
+	subCtnMutex sync.Mutex
 )
 
 func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, writer chan<- *wstypes.WsRespMessage) {
@@ -171,9 +171,9 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	subMutex.Lock()
-	subMap[msg.Index] = cancel
-	subMutex.Unlock()
+	subCtnMutex.Lock()
+	subCtnMap[msg.Index] = cancel
+	subCtnMutex.Unlock()
 
 	onError := func(err error) {
 		cancelled := errors.Is(ctx.Err(), context.Canceled)
@@ -186,9 +186,9 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 			Error: true,
 			Data:  err.Error(),
 		}
-		subMutex.Lock()
-		delete(subMap, msg.Index)
-		subMutex.Unlock()
+		subCtnMutex.Lock()
+		delete(subCtnMap, msg.Index)
+		subCtnMutex.Unlock()
 	}
 
 	var wg sync.WaitGroup
@@ -267,12 +267,12 @@ func UnsubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writ
 		return
 	}
 
-	subMutex.Lock()
-	if c, ok := subMap[unsubId]; ok {
+	subCtnMutex.Lock()
+	if c, ok := subCtnMap[unsubId]; ok {
 		c()
-		delete(subMap, unsubId)
+		delete(subCtnMap, unsubId)
 	}
-	subMutex.Unlock()
+	subCtnMutex.Unlock()
 
 	writer <- &wstypes.WsRespMessage{
 		Index: msg.Index,
