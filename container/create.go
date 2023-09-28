@@ -28,11 +28,13 @@ type portReq struct {
 type createReq struct {
 	Name    string            `json:"name"`
 	Image   string            `json:"image"`
-	Command string            `json:"command"`
-	WorkDir string            `json:"workDir"`
+	Command *string           `json:"command"`
+	WorkDir *string           `json:"workDir"`
 	Env     map[string]string `json:"env"`
 	Volumes []*volumeReq      `json:"volumes"`
 	Ports   []*portReq        `json:"ports"`
+	Start   bool              `json:"start"`
+	Restart string            `json:"restart"`
 }
 
 func Create(w http.ResponseWriter, req *http.Request) {
@@ -46,13 +48,17 @@ func Create(w http.ResponseWriter, req *http.Request) {
 
 	pmConn := conn.GetConn(req.Context())
 
-	createCmd := []string{"podman", "run", "-d"}
+	createCmd := []string{"podman", "create"}
+	if c.Start {
+		createCmd = []string{"podman", "run", "-d"}
+	}
+
 	s := specgen.NewSpecGenerator(c.Image, false)
 	s.Name = c.Name
 	createCmd = append(createCmd, "--name", s.Name)
 
-	if c.WorkDir != "" {
-		s.WorkDir = c.WorkDir
+	if c.WorkDir != nil {
+		s.WorkDir = *c.WorkDir
 		createCmd = append(createCmd, "--workdir", s.WorkDir)
 	}
 	if len(c.Env) > 0 {
@@ -93,11 +99,15 @@ func Create(w http.ResponseWriter, req *http.Request) {
 		}
 		s.PortMappings = ports
 	}
+	if c.Restart != "no" {
+		s.RestartPolicy = c.Restart
+		createCmd = append(createCmd, "--restart", c.Restart)
+	}
 
 	createCmd = append(createCmd, c.Image)
 
-	if c.Command != "" {
-		cmds, err := shellwords.Parse(c.Command)
+	if c.Command != nil {
+		cmds, err := shellwords.Parse(*c.Command)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid command: %v", err), http.StatusBadRequest)
 			return
@@ -113,7 +123,16 @@ func Create(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_ = containers.Start(pmConn, ret.ID, nil)
+	startErrStr := ""
+	if c.Start {
+		err = containers.Start(pmConn, ret.ID, nil)
+		if err != nil {
+			startErrStr = err.Error()
+		}
+	}
 
-	utils.Return(w, ret)
+	utils.Return(w, map[string]any{
+		"Id":       ret.ID,
+		"StartErr": startErrStr,
+	})
 }
