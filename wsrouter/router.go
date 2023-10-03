@@ -116,6 +116,10 @@ func router(ctx context.Context, msg *wstypes.WsReqMessage, writer chan<- *wstyp
 		image.SubscribeToImagesList(ctx, msg, writer)
 	case "unsubscribeToImagesList":
 		image.UnsubscribeToImagesList(ctx, msg, writer)
+	case "subscribeToContainerStats":
+		container.SubscribeToContainerStats(ctx, msg, writer)
+	case "unsubscribeToContainerStats":
+		container.UnsubscribeToContainerStats(ctx, msg, writer)
 	default:
 		notFound(ctx, msg, writer)
 	}

@@ -70,6 +70,11 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 		var err error
 		var graceCancel func()
 		for event := range ch {
+			cancelled := errors.Is(ctx.Err(), context.Canceled)
+			if cancelled {
+				continue
+			}
+
 			switch event.Action {
 			case "create":
 				graceCancel = graceSend(ctx, msg.Index, writer, onError)
@@ -217,6 +222,11 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 		var err error
 		var graceCancel func()
 		for event := range ch {
+			cancelled := errors.Is(ctx.Err(), context.Canceled)
+			if cancelled {
+				continue
+			}
+
 			if event.Actor.ID[0:12] != containerShortId {
 				continue
 			}

@@ -8,9 +8,11 @@ import (
 	nettypes "github.com/containers/common/libnetwork/types"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/containers/podman/v4/pkg/specgen"
+	"github.com/containers/podman/v4/pkg/util"
 	"github.com/mattn/go-shellwords"
 	spec "github.com/opencontainers/runtime-spec/specs-go"
 	"net/http"
+	"strconv"
 )
 
 type volumeReq struct {
@@ -25,16 +27,24 @@ type portReq struct {
 	Protocol  string   `json:"protocol"`
 }
 
+type resReq struct {
+	CpuShares        int     `json:"cpuShares"`
+	CpuCores         float64 `json:"cpuCores"`
+	MemoryMB         int     `json:"memoryMB"`
+	MemoryWithSwapMB int     `json:"memorySwapMB"`
+}
+
 type createReq struct {
-	Name    string            `json:"name"`
-	Image   string            `json:"image"`
-	Command *string           `json:"command"`
-	WorkDir *string           `json:"workDir"`
-	Env     map[string]string `json:"env"`
-	Volumes []*volumeReq      `json:"volumes"`
-	Ports   []*portReq        `json:"ports"`
-	Start   bool              `json:"start"`
-	Restart string            `json:"restart"`
+	Name          string            `json:"name"`
+	Image         string            `json:"image"`
+	Command       *string           `json:"command"`
+	WorkDir       *string           `json:"workDir"`
+	Env           map[string]string `json:"env"`
+	Volumes       []*volumeReq      `json:"volumes"`
+	Ports         []*portReq        `json:"ports"`
+	Resources     *resReq           `json:"resources"`
+	Start         bool              `json:"start"`
+	AlwaysRestart bool              `json:"alwaysRestart"`
 }
 
 func Create(w http.ResponseWriter, req *http.Request) {
@@ -99,11 +109,59 @@ func Create(w http.ResponseWriter, req *http.Request) {
 		}
 		s.PortMappings = ports
 	}
-	if c.Restart != "no" {
-		s.RestartPolicy = c.Restart
-		createCmd = append(createCmd, "--restart", c.Restart)
+	if res := c.Resources; res != nil {
+		resLimit := &spec.LinuxResources{}
+
+		hasCpuLimit := false
+		limitCpu := &spec.LinuxCPU{}
+		if res.CpuShares > 0 {
+			shares := uint64(res.CpuShares)
+			limitCpu.Shares = &shares
+			hasCpuLimit = true
+			resLimit.CPU = limitCpu
+			createCmd = append(createCmd, "--cpu-shares", strconv.Itoa(res.CpuShares))
+		}
+		if res.CpuCores > 0 {
+			period, quota := util.CoresToPeriodAndQuota(res.CpuCores)
+			limitCpu.Period = &period
+			limitCpu.Quota = &quota
+			hasCpuLimit = true
+			createCmd = append(createCmd, "--cpus", strconv.FormatFloat(res.CpuCores, 'f', -1, 64))
+		}
+		if hasCpuLimit {
+			resLimit.CPU = limitCpu
+		}
+
+		hasMemoryLimit := false
+		limitMem := &spec.LinuxMemory{}
+		if res.MemoryMB > 0 {
+			limitBytes := int64(res.MemoryMB) * 1024 * 1024
+			limitMem.Limit = &limitBytes
+			limitBytesDouble := limitBytes * 2
+			limitMem.Swap = &limitBytesDouble
+			hasMemoryLimit = true
+			createCmd = append(createCmd, "--memory", fmt.Sprintf("%dm", res.MemoryMB))
+		}
+		if res.MemoryWithSwapMB > 0 {
+			limitBytes := int64(res.MemoryWithSwapMB) * 1024 * 1024
+			limitMem.Swap = &limitBytes
+			hasMemoryLimit = true
+			createCmd = append(createCmd, "--memory-swap", fmt.Sprintf("%dm", res.MemoryWithSwapMB))
+		}
+		if hasMemoryLimit {
+			resLimit.Memory = limitMem
+		}
+
+		if hasCpuLimit || hasMemoryLimit {
+			s.ResourceLimits = resLimit
+		}
+	}
+	if c.AlwaysRestart {
+		s.RestartPolicy = "always"
+		createCmd = append(createCmd, "--restart", "always")
 	}
 
+	// finally, image and commands
 	createCmd = append(createCmd, c.Image)
 
 	if c.Command != nil {
