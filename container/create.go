@@ -21,10 +21,15 @@ type volumeReq struct {
 	ReadWrite string `json:"readWrite"`
 }
 
+type portHost struct {
+	Addr string `json:"addr"`
+	Port uint16 `json:"port"`
+}
+
 type portReq struct {
-	Container uint16   `json:"container"`
-	Host      []uint16 `json:"host"`
-	Protocol  string   `json:"protocol"`
+	Container uint16      `json:"container"`
+	Host      []*portHost `json:"host"`
+	Protocol  string      `json:"protocol"`
 }
 
 type resReq struct {
@@ -98,13 +103,18 @@ func Create(w http.ResponseWriter, req *http.Request) {
 	if len(c.Ports) > 0 {
 		var ports []nettypes.PortMapping
 		for _, p := range c.Ports {
-			for _, hostPort := range p.Host {
+			for _, host := range p.Host {
 				ports = append(ports, nettypes.PortMapping{
+					HostIP:        host.Addr,
 					ContainerPort: p.Container,
-					HostPort:      hostPort,
+					HostPort:      host.Port,
 					Protocol:      p.Protocol,
 				})
-				createCmd = append(createCmd, "--publish", fmt.Sprintf("%d:%d/%s", hostPort, p.Container, p.Protocol))
+				if host.Addr != "" {
+					createCmd = append(createCmd, "--publish", fmt.Sprintf("%s:%d:%d/%s", host.Addr, host.Port, p.Container, p.Protocol))
+				} else {
+					createCmd = append(createCmd, "--publish", fmt.Sprintf("%d:%d/%s", host.Port, p.Container, p.Protocol))
+				}
 			}
 		}
 		s.PortMappings = ports
