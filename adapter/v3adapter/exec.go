@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/containers/podman/v4/libpod/define"
 	"github.com/containers/podman/v4/pkg/api/handlers"
-	"github.com/containers/podman/v4/pkg/bindings"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/containers/podman/v4/pkg/domain/entities"
 	sig "github.com/containers/podman/v4/pkg/signal"
@@ -184,9 +183,8 @@ func ContainerExecStartAndAttach(ctx context.Context, sessionID string, options 
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode > 299 {
-		d, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("%s", d)
+	if err := checkResp(resp); err != nil {
+		return err
 	}
 
 	if needTTY {
@@ -317,9 +315,8 @@ func resizeTTY(ctx context.Context, id string, height *int, width *int) error {
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode > 299 {
-		d, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("%s", d)
+	if err := checkResp(resp); err != nil {
+		return err
 	}
 	return nil
 }
@@ -403,9 +400,9 @@ func ContainerExecInspect(ctx context.Context, sessionID string, options *contai
 	return &result, nil
 }
 
-func ContainerResizeExecTTY(ctx context.Context, nameOrID string, options *containers.ResizeExecTTYOptions) error {
+func ContainerResizeExecTTY(ctx context.Context, sessionId string, options *containers.ResizeExecTTYOptions) error {
 	if options == nil {
 		options = new(containers.ResizeExecTTYOptions)
 	}
-	return resizeTTY(ctx, bindings.JoinURL("exec", nameOrID, "resize"), options.Height, options.Width)
+	return resizeTTY(ctx, sessionId, options.Height, options.Width)
 }
