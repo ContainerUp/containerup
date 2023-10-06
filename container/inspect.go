@@ -1,6 +1,7 @@
 package container
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/utils"
 	"fmt"
@@ -21,7 +22,7 @@ func Inspect(w http.ResponseWriter, req *http.Request) {
 		inspectOpts.Size = &yes
 	}
 
-	ret, err := containers.Inspect(pmConn, nameOrId, inspectOpts)
+	ret, err := adapter.ContainerInspect(pmConn, nameOrId, inspectOpts)
 	if err != nil {
 		if utils.IsErr404(err) {
 			http.Error(w, fmt.Sprintf("Cannot find container %s", nameOrId), http.StatusNotFound)

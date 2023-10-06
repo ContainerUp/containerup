@@ -1,6 +1,7 @@
 package image
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/login"
 	"containerup/utils"
@@ -46,7 +47,7 @@ func Pull(w http.ResponseWriter, req *http.Request) {
 
 	pmConn, stopByServer, waitEnd := pullStatusTransmitter(pmConn, ws, progressReader)
 
-	imgs, err := images.Pull(pmConn, imgName, pullOpts)
+	imgs, err := adapter.ImagePull(pmConn, imgName, pullOpts)
 	stopByServer(imgs, err)
 	waitEnd()
 }

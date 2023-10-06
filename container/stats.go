@@ -1,6 +1,7 @@
 package container
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/wsrouter/wstypes"
 	"context"
@@ -61,7 +62,7 @@ func SubscribeToContainerStats(ctx context.Context, msg *wstypes.WsReqMessage, w
 		Stream:   &yes,
 		Interval: &interval,
 	}
-	ch, err := containers.Stats(ctx, ctns, statsOpt)
+	ch, err := adapter.ContainerStats(ctx, ctns, statsOpt)
 	if err != nil {
 		onError(err)
 		return

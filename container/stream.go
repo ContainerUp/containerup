@@ -1,6 +1,7 @@
 package container
 
 import (
+	"containerup/adapter"
 	"containerup/wsrouter/wstypes"
 	"context"
 	"encoding/json"
@@ -52,7 +53,7 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 		defer wg.Done()
 		defer cancel()
 
-		err := system.Events(ctx, ch, nil, &system.EventsOptions{
+		err := adapter.SystemEvents(ctx, ch, nil, &system.EventsOptions{
 			Filters: map[string][]string{
 				"type": {"container"},
 			},
@@ -105,7 +106,7 @@ func sendList(ctx context.Context, index uint, writer chan<- *wstypes.WsRespMess
 	listOpts := &containers.ListOptions{
 		All: &yes,
 	}
-	ret, err := containers.List(ctx, listOpts)
+	ret, err := adapter.ContainerList(ctx, listOpts)
 	if err != nil {
 		return err
 	}
@@ -204,7 +205,7 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 		defer wg.Done()
 		defer cancel()
 
-		err := system.Events(ctx, ch, nil, &system.EventsOptions{
+		err := adapter.SystemEvents(ctx, ch, nil, &system.EventsOptions{
 			Filters: map[string][]string{
 				"type": {"container"},
 			},
@@ -254,7 +255,7 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 }
 
 func sendSingle(ctx context.Context, index uint, writer chan<- *wstypes.WsRespMessage, id string) error {
-	ret, err := containers.Inspect(ctx, id, nil)
+	ret, err := adapter.ContainerInspect(ctx, id, nil)
 	if err != nil {
 		return err
 	}

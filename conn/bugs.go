@@ -1,13 +1,13 @@
 package conn
 
 import (
+	"containerup/adapter"
 	"context"
-	"github.com/containers/podman/v4/pkg/bindings"
 )
 
 // BugReversedStatsNetwork checks if the server version is below 4.4.0 https://github.com/containers/podman/pull/16628
 func BugReversedStatsNetwork(ctx context.Context) bool {
-	v := bindings.ServiceVersion(ctx)
+	v := adapter.ServiceVersion(ctx)
 	if v.Major == 0 {
 		// empty
 		return false

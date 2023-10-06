@@ -1,6 +1,7 @@
 package container
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/utils"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
@@ -19,7 +20,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 		listOpts.Size = &yes
 	}
 
-	ret, err := containers.List(pmConn, listOpts)
+	ret, err := adapter.ContainerList(pmConn, listOpts)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

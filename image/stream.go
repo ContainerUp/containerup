@@ -1,12 +1,11 @@
 package image
 
 import (
+	"containerup/adapter"
 	"containerup/wsrouter/wstypes"
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/containers/podman/v4/pkg/bindings/images"
-	"github.com/containers/podman/v4/pkg/bindings/system"
 	"github.com/containers/podman/v4/pkg/domain/entities"
 	"sort"
 	"sync"
@@ -50,7 +49,7 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 		defer wg.Done()
 		defer cancel()
 
-		err := system.Events(ctx, ch, nil, nil)
+		err := adapter.SystemEvents(ctx, ch, nil, nil)
 		if err != nil {
 			onError(err)
 			return
@@ -104,7 +103,7 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 }
 
 func sendList(ctx context.Context, index uint, writer chan<- *wstypes.WsRespMessage) error {
-	ret, err := images.List(ctx, nil)
+	ret, err := adapter.ImageList(ctx, nil)
 	if err != nil {
 		return err
 	}

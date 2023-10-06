@@ -1,6 +1,7 @@
 package container
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/utils"
 	"context"
@@ -71,11 +72,11 @@ func stop(ctx context.Context, nameOrID string) error {
 	stopOpts := &containers.StopOptions{
 		Timeout: &sec,
 	}
-	return containers.Stop(ctx, nameOrID, stopOpts)
+	return adapter.ContainerStop(ctx, nameOrID, stopOpts)
 }
 
 func start(ctx context.Context, nameOrID string) error {
-	return containers.Start(ctx, nameOrID, nil)
+	return adapter.ContainerStart(ctx, nameOrID, nil)
 }
 
 func remove(ctx context.Context, nameOrID string) error {
@@ -83,7 +84,7 @@ func remove(ctx context.Context, nameOrID string) error {
 	removeOpts := &containers.RemoveOptions{
 		Timeout: &sec,
 	}
-	results, err := containers.Remove(ctx, nameOrID, removeOpts)
+	results, err := adapter.ContainerRemove(ctx, nameOrID, removeOpts)
 	if err != nil {
 		return err
 	}
@@ -114,6 +115,6 @@ func commit(ctx context.Context, nameOrID, repoTag string) error {
 	if len(parts) == 2 {
 		commitOpts.Tag = &parts[1]
 	}
-	_, err := containers.Commit(ctx, nameOrID, commitOpts)
+	_, err := adapter.ContainerCommit(ctx, nameOrID, commitOpts)
 	return err
 }

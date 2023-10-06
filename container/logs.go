@@ -1,6 +1,7 @@
 package container
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/login"
 	"containerup/utils"
@@ -51,7 +52,7 @@ func Logs(w http.ResponseWriter, req *http.Request) {
 
 	pmConn, stopByServer, waitEnd, chStdOut, chStdErr := logsSender(pmConn, ws)
 
-	err = containers.Logs(pmConn, nameOrId, logOptions, chStdOut, chStdErr)
+	err = adapter.ContainerLogs(pmConn, nameOrId, logOptions, chStdOut, chStdErr)
 	stopByServer(err)
 
 	waitEnd()

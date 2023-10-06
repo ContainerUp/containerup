@@ -1,8 +1,8 @@
 package conn
 
 import (
+	"containerup/adapter"
 	"context"
-	"github.com/containers/podman/v4/pkg/bindings"
 	"net/http"
 )
 
@@ -13,7 +13,7 @@ var (
 )
 
 func ConnectionChainer(uri string) (func(http.HandlerFunc) http.HandlerFunc, error) {
-	conn, err := bindings.NewConnection(context.Background(), uri)
+	conn, err := adapter.NewConnection(context.Background(), uri)
 	if err != nil {
 		return nil, err
 	}

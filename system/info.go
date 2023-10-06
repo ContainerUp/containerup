@@ -1,9 +1,9 @@
 package system
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/utils"
-	"github.com/containers/podman/v4/pkg/bindings/system"
 	"net/http"
 )
 
@@ -22,7 +22,7 @@ type sysInfo struct {
 func Info(w http.ResponseWriter, req *http.Request) {
 	pmConn := conn.GetConn(req.Context())
 
-	ret, err := system.Info(pmConn, nil)
+	ret, err := adapter.SystemInfo(pmConn, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

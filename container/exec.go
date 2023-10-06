@@ -2,6 +2,7 @@ package container
 
 import (
 	"bufio"
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/login"
 	"containerup/utils"
@@ -85,7 +86,7 @@ func Exec(w http.ResponseWriter, req *http.Request) {
 	//log.Printf("exec start...")
 	//defer log.Printf("exec end")
 
-	sessionId, err := containers.ExecCreate(pmConn, nameOrId, execConfig)
+	sessionId, err := adapter.ContainerExecCreate(pmConn, nameOrId, execConfig)
 	if err != nil {
 		ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4002, err.Error()))
 		return
@@ -112,7 +113,7 @@ func Exec(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if detach {
-		err = containers.ExecStart(pmConn, sessionId, nil)
+		err = adapter.ContainerExecStart(pmConn, sessionId, nil)
 		if err != nil {
 			ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4002, err.Error()))
 			return
@@ -123,12 +124,12 @@ func Exec(w http.ResponseWriter, req *http.Request) {
 
 	pmConn, stopByServer, waitEnd := execTransmitter(pmConn, ws, sessionId, stdOutReader, stdErrReader, stdInWriter)
 
-	err = containers.ExecStartAndAttach(pmConn, sessionId, startOpts)
+	err = adapter.ContainerExecStartAndAttach(pmConn, sessionId, startOpts)
 
 	exitCode := -1
 	// websocket can be closed by user
 	if pmConn.Err() == nil {
-		inspectOut, err := containers.ExecInspect(pmConn, sessionId, nil)
+		inspectOut, err := adapter.ContainerExecInspect(pmConn, sessionId, nil)
 		if err != nil {
 			log.Printf("inspect err : %v", err)
 		} else {
@@ -214,7 +215,7 @@ func execTransmitter(pmConn context.Context, ws *websocket.Conn, sessionId strin
 						}
 						w := int(data[1])*256 + int(data[2])
 						h := int(data[3])*256 + int(data[4])
-						err2 = containers.ResizeExecTTY(pmConn, sessionId, &containers.ResizeExecTTYOptions{
+						err2 = adapter.ContainerResizeExecTTY(pmConn, sessionId, &containers.ResizeExecTTYOptions{
 							Height: &h,
 							Width:  &w,
 						})

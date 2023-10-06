@@ -1,12 +1,12 @@
 package container
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/utils"
 	"encoding/json"
 	"fmt"
 	nettypes "github.com/containers/common/libnetwork/types"
-	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"github.com/containers/podman/v4/pkg/specgen"
 	"github.com/containers/podman/v4/pkg/util"
 	"github.com/mattn/go-shellwords"
@@ -185,7 +185,7 @@ func Create(w http.ResponseWriter, req *http.Request) {
 	}
 
 	s.ContainerCreateCommand = createCmd
-	ret, err := containers.CreateWithSpec(pmConn, s, nil)
+	ret, err := adapter.ContainerCreateWithSpec(pmConn, s, nil)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Cannot create container: %v", err), http.StatusInternalServerError)
 		return
@@ -193,7 +193,7 @@ func Create(w http.ResponseWriter, req *http.Request) {
 
 	startErrStr := ""
 	if c.Start {
-		err = containers.Start(pmConn, ret.ID, nil)
+		err = adapter.ContainerStart(pmConn, ret.ID, nil)
 		if err != nil {
 			startErrStr = err.Error()
 		}

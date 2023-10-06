@@ -1,9 +1,9 @@
 package image
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/utils"
-	"github.com/containers/podman/v4/pkg/bindings/images"
 	"net/http"
 	"sort"
 )
@@ -11,7 +11,7 @@ import (
 func List(w http.ResponseWriter, req *http.Request) {
 	pmConn := conn.GetConn(req.Context())
 
-	ret, err := images.List(pmConn, nil)
+	ret, err := adapter.ImageList(pmConn, nil)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

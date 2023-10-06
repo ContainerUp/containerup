@@ -1,12 +1,12 @@
 package image
 
 import (
+	"containerup/adapter"
 	"containerup/conn"
 	"containerup/utils"
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/containers/podman/v4/pkg/bindings/images"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strings"
@@ -67,7 +67,7 @@ func remove(ctx context.Context, nameOrID, tag string) (any, error) {
 		nameOrID = tag
 	}
 
-	ret, errs := images.Remove(ctx, []string{nameOrID}, nil)
+	ret, errs := adapter.ImageRemove(ctx, []string{nameOrID}, nil)
 	if len(errs) > 0 {
 		errStr := ""
 		for _, e := range errs {
@@ -95,5 +95,5 @@ func tag(ctx context.Context, nameOrId, repoTag string) error {
 		tag = parts[1]
 	}
 
-	return images.Tag(ctx, nameOrId, tag, parts[0], nil)
+	return adapter.ImageTag(ctx, nameOrId, tag, parts[0], nil)
 }
