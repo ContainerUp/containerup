@@ -20,7 +20,13 @@ func ConnectionChainer(uri string) (func(http.HandlerFunc) http.HandlerFunc, err
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
-			next(w, req.WithContext(context.WithValue(req.Context(), ctxKey, conn)))
+			reqCtx := req.Context()
+			connCtx, connCancel := context.WithCancel(conn)
+			go func() {
+				defer connCancel()
+				<-reqCtx.Done()
+			}()
+			next(w, req.WithContext(context.WithValue(reqCtx, ctxKey, connCtx)))
 		}
 	}, nil
 }
