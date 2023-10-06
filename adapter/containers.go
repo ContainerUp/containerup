@@ -102,9 +102,9 @@ func ContainerExecInspect(ctx context.Context, sessionID string, options *contai
 	return containers.ExecInspect(ctx, sessionID, options)
 }
 
-func ContainerResizeExecTTY(ctx context.Context, nameOrID string, options *containers.ResizeExecTTYOptions) error {
+func ContainerResizeExecTTY(ctx context.Context, sessionId string, options *containers.ResizeExecTTYOptions) error {
 	if legacy {
-		return v3adapter.ContainerResizeExecTTY(ctx, nameOrID, options)
+		return v3adapter.ContainerResizeExecTTY(ctx, sessionId, options)
 	}
-	return containers.ResizeExecTTY(ctx, nameOrID, options)
+	return containers.ResizeExecTTY(ctx, sessionId, options)
 }

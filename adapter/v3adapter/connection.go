@@ -90,8 +90,8 @@ func pingNewConnection(ctx context.Context) (*semver.Version, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status %s", resp.Status)
+	if err := checkResp(resp); err != nil {
+		return nil, err
 	}
 
 	verStr := resp.Header.Get("Libpod-API-Version")
