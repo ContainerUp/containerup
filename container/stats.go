@@ -2,14 +2,11 @@ package container
 
 import (
 	"containerup/adapter"
-	"containerup/conn"
 	"containerup/wsrouter/wstypes"
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/containers/podman/v4/libpod/define"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
-	"github.com/containers/podman/v4/pkg/domain/entities"
 	"sync"
 )
 
@@ -78,43 +75,11 @@ func SubscribeToContainerStats(ctx context.Context, msg *wstypes.WsReqMessage, w
 	go func() {
 		defer wg.Done()
 
-		firstSent := false
-		previousStats := make([][]define.ContainerStats, 0, interval)
-
-		reversed := conn.BugReversedContainerStatsNetwork(ctx)
-		for event := range ch {
-			if reversed {
-				for i := range event.Stats {
-					event.Stats[i].NetInput, event.Stats[i].NetOutput = event.Stats[i].NetOutput, event.Stats[i].NetInput
-				}
+		for report := range ch {
+			writer <- &wstypes.WsRespMessage{
+				Index: msg.Index,
+				Data:  report,
 			}
-
-			if conn.FeatureContainerStatsInterval(ctx) {
-				writer <- &wstypes.WsRespMessage{
-					Index: msg.Index,
-					Data:  event,
-				}
-			} else {
-				// interval is omitted by server, the actual interval is 1
-
-				// cache the stats
-				previousStats = append(previousStats, event.Stats)
-
-				if !firstSent || len(previousStats) == interval {
-					firstSent = true
-
-					writer <- &wstypes.WsRespMessage{
-						Index: msg.Index,
-						Data: entities.ContainerStatsReport{
-							Error: event.Error,
-							Stats: calcStats(previousStats),
-						},
-					}
-
-					previousStats = make([][]define.ContainerStats, 0, interval)
-				}
-			}
-
 		}
 	}()
 
@@ -126,26 +91,6 @@ func SubscribeToContainerStats(ctx context.Context, msg *wstypes.WsReqMessage, w
 			Data:  nil,
 		}
 	}
-}
-
-// calcStats finds the latest stats of each container and calculates the CPU
-func calcStats(previousStats [][]define.ContainerStats) []define.ContainerStats {
-	latest := map[string]define.ContainerStats{}
-
-	sumCpu := map[string]float64{}
-	for _, st := range previousStats {
-		for _, item := range st {
-			sumCpu[item.ContainerID] += item.CPU
-			latest[item.ContainerID] = item
-		}
-	}
-
-	ret := make([]define.ContainerStats, 0, len(latest))
-	for _, item := range latest {
-		item.CPU = sumCpu[item.ContainerID]
-		ret = append(ret, item)
-	}
-	return ret
 }
 
 func UnsubscribeToContainerStats(ctx context.Context, msg *wstypes.WsReqMessage, writer chan<- *wstypes.WsRespMessage) {

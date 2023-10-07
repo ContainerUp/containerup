@@ -68,10 +68,12 @@ func ContainerLogs(ctx context.Context, nameOrID string, options *containers.Log
 }
 
 func ContainerStats(ctx context.Context, ctns []string, options *containers.StatsOptions) (chan entities.ContainerStatsReport, error) {
+	fix := fixer{ctx, options}
 	if legacy {
-		return v3adapter.ContainerStats(ctx, ctns, options)
+		return fix.fixContainerStats(v3adapter.ContainerStats(ctx, ctns, options))
 	}
-	return containers.Stats(ctx, ctns, options)
+
+	return fix.fixContainerStats(containers.Stats(ctx, ctns, options))
 }
 
 func ContainerExecCreate(ctx context.Context, nameOrID string, options *handlers.ExecCreateConfig) (string, error) {
