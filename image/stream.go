@@ -24,6 +24,11 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 	subListMutex.Lock()
 	subListMap[msg.Index] = cancel
 	subListMutex.Unlock()
+	defer func() {
+		subListMutex.Lock()
+		defer subListMutex.Unlock()
+		delete(subListMap, msg.Index)
+	}()
 
 	onError := func(err error) {
 		cancelled := errors.Is(ctx.Err(), context.Canceled)
@@ -36,9 +41,6 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 			Error: true,
 			Data:  err.Error(),
 		}
-		subListMutex.Lock()
-		delete(subListMap, msg.Index)
-		subListMutex.Unlock()
 	}
 
 	var wg sync.WaitGroup
@@ -100,6 +102,13 @@ func SubscribeToImagesList(ctx context.Context, msg *wstypes.WsReqMessage, write
 	}
 
 	wg.Wait()
+	if ctx.Err() == nil {
+		writer <- &wstypes.WsRespMessage{
+			Index: msg.Index,
+			Error: false,
+			Data:  nil,
+		}
+	}
 }
 
 func sendList(ctx context.Context, index uint, writer chan<- *wstypes.WsRespMessage) error {

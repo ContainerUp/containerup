@@ -28,6 +28,11 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 	subListMutex.Lock()
 	subListMap[msg.Index] = cancel
 	subListMutex.Unlock()
+	defer func() {
+		subListMutex.Lock()
+		defer subListMutex.Unlock()
+		delete(subListMap, msg.Index)
+	}()
 
 	onError := func(err error) {
 		cancelled := errors.Is(ctx.Err(), context.Canceled)
@@ -40,9 +45,6 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 			Error: true,
 			Data:  err.Error(),
 		}
-		subListMutex.Lock()
-		delete(subListMap, msg.Index)
-		subListMutex.Unlock()
 	}
 
 	var wg sync.WaitGroup
@@ -99,6 +101,13 @@ func SubscribeToContainersList(ctx context.Context, msg *wstypes.WsReqMessage, w
 	}
 
 	wg.Wait()
+	if ctx.Err() == nil {
+		writer <- &wstypes.WsRespMessage{
+			Index: msg.Index,
+			Error: false,
+			Data:  nil,
+		}
+	}
 }
 
 func sendList(ctx context.Context, index uint, writer chan<- *wstypes.WsRespMessage) error {
@@ -180,6 +189,11 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 	subCtnMutex.Lock()
 	subCtnMap[msg.Index] = cancel
 	subCtnMutex.Unlock()
+	defer func() {
+		subCtnMutex.Lock()
+		defer subCtnMutex.Unlock()
+		delete(subCtnMap, msg.Index)
+	}()
 
 	onError := func(err error) {
 		cancelled := errors.Is(ctx.Err(), context.Canceled)
@@ -192,9 +206,6 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 			Error: true,
 			Data:  err.Error(),
 		}
-		subCtnMutex.Lock()
-		delete(subCtnMap, msg.Index)
-		subCtnMutex.Unlock()
 	}
 
 	var wg sync.WaitGroup
@@ -252,6 +263,13 @@ func SubscribeToContainer(ctx context.Context, msg *wstypes.WsReqMessage, writer
 	}
 
 	wg.Wait()
+	if ctx.Err() == nil {
+		writer <- &wstypes.WsRespMessage{
+			Index: msg.Index,
+			Error: false,
+			Data:  nil,
+		}
+	}
 }
 
 func sendSingle(ctx context.Context, index uint, writer chan<- *wstypes.WsRespMessage, id string) error {
