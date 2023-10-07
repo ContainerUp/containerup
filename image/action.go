@@ -77,7 +77,7 @@ func remove(ctx context.Context, nameOrID, tag string) (any, error) {
 	}
 
 	result := "untagged"
-	if len(ret.Deleted) > 0 {
+	if len(ret.Deleted) > 0 && ret.Deleted[0] != "" {
 		result = "removed"
 	}
 

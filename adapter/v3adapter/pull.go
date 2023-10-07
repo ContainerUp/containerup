@@ -9,9 +9,7 @@ import (
 	"github.com/containers/podman/v4/pkg/domain/entities"
 	"github.com/hashicorp/go-multierror"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 )
 
@@ -53,14 +51,8 @@ func ImagePull(ctx context.Context, rawImage string, options *images.PullOptions
 		return nil, err
 	}
 
-	// Historically pull writes status to stderr
-	stderr := io.Writer(os.Stderr)
-	if options.GetQuiet() {
-		stderr = ioutil.Discard
-	}
-
 	dec := json.NewDecoder(resp.Body)
-	var images []string
+	var result []string
 	var mErr error
 	for {
 		var report entities.ImagePullReport
@@ -73,22 +65,24 @@ func ImagePull(ctx context.Context, rawImage string, options *images.PullOptions
 
 		select {
 		case <-ctx.Done():
-			return images, mErr
+			return result, mErr
 		default:
 			// non-blocking select
 		}
 
 		switch {
 		case report.Stream != "":
-			fmt.Fprint(stderr, report.Stream)
+			if options.ProgressWriter != nil {
+				fmt.Fprint(*options.ProgressWriter, report.Stream)
+			}
 		case report.Error != "":
 			mErr = multierror.Append(mErr, errors.New(report.Error))
 		case len(report.Images) > 0:
-			images = report.Images
+			result = report.Images
 		case report.ID != "":
 		default:
-			return images, errors.New("failed to parse pull results stream, unexpected input")
+			return result, errors.New("failed to parse pull results stream, unexpected input")
 		}
 	}
-	return images, mErr
+	return result, mErr
 }

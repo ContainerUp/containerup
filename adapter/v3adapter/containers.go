@@ -69,9 +69,37 @@ func ContainerList(ctx context.Context, options *containers.ListOptions) ([]enti
 	}
 
 	var result []entities.ListContainer
-	err = json.NewDecoder(resp.Body).Decode(&result)
+	var tmpMap []map[string]any
+
+	d, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return result, nil
+	}
+
+	err = json.Unmarshal(d, &tmpMap)
 	if err != nil {
 		return nil, err
+	}
+
+	err = json.Unmarshal(d, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, ctn := range tmpMap {
+		if ports, ok := ctn["Ports"].([]any); ok {
+			for j, portAny := range ports {
+				if port, ok := portAny.(map[string]any); ok {
+					resCtn := result[i]
+					p := resCtn.Ports[j]
+					p.HostIP = port["hostIP"].(string)
+					p.HostPort = uint16(port["hostPort"].(float64))
+					p.ContainerPort = uint16(port["containerPort"].(float64))
+					resCtn.Ports[j] = p
+					result[i] = resCtn
+				}
+			}
+		}
 	}
 
 	return result, nil
@@ -160,8 +188,8 @@ func ContainerCommit(ctx context.Context, nameOrID string, options *containers.C
 	if err != nil {
 		return result, err
 	}
-	ep := fmt.Sprintf("/containers/%s/commit", nameOrID)
-	resp, err := conn.DoRequest(ctx, nil, http.MethodPost, ep, params)
+	params.Set("container", nameOrID)
+	resp, err := conn.DoRequest(ctx, nil, http.MethodPost, "/commit", params)
 	if err != nil {
 		return result, err
 	}
@@ -253,11 +281,11 @@ func ContainerLogs(ctx context.Context, nameOrID string, options *containers.Log
 
 		switch fd {
 		case 0:
-			stdoutChan <- string(frame)
+			stdoutChan <- string(frame) + "\n"
 		case 1:
-			stdoutChan <- string(frame)
+			stdoutChan <- string(frame) + "\n"
 		case 2:
-			stderrChan <- string(frame)
+			stderrChan <- string(frame) + "\n"
 		case 3:
 			return errors.New("error from service in stream: " + string(frame))
 		default:

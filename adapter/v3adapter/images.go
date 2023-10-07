@@ -54,7 +54,7 @@ func ImageRemove(ctx context.Context, images []string, options *images.RemoveOpt
 	for _, image := range images {
 		params.Add("images", image)
 	}
-	resp, err := conn.DoRequest(ctx, nil, http.MethodDelete, "/images/delete", params)
+	resp, err := conn.DoRequest(ctx, nil, http.MethodDelete, "/images/remove", params)
 	if err != nil {
 		return nil, []error{err}
 	}
