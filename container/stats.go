@@ -116,3 +116,58 @@ func UnsubscribeToContainerStats(ctx context.Context, msg *wstypes.WsReqMessage,
 		Data:  true,
 	}
 }
+
+type TotalStats struct {
+	CpuNano uint64
+	Memory  uint64
+}
+
+func TotalStatsStream(ctx context.Context, interval int) (<-chan *TotalStats, error) {
+	yes := true
+	statsOpt := &containers.StatsOptions{
+		Stream:   &yes,
+		Interval: &interval,
+	}
+	ch, err := adapter.ContainerStats(ctx, nil, statsOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	output := make(chan *TotalStats)
+
+	go func() {
+		defer close(output)
+		prevCpu := map[string]uint64{}
+		first := true
+
+		for report := range ch {
+			totalCpu := uint64(0)
+			totalMem := uint64(0)
+			currentCpu := map[string]uint64{}
+
+			for _, rpt := range report.Stats {
+				currentCpu[rpt.ContainerID] = rpt.CPUNano
+
+				if p, ok := prevCpu[rpt.ContainerID]; ok {
+					totalCpu += rpt.CPUNano - p
+				} else {
+					totalCpu += rpt.CPUNano
+				}
+				totalMem += rpt.MemUsage
+			}
+			prevCpu = currentCpu
+
+			if first {
+				totalCpu = 0
+				first = false
+			}
+
+			output <- &TotalStats{
+				CpuNano: totalCpu,
+				Memory:  totalMem,
+			}
+		}
+	}()
+
+	return output, nil
+}

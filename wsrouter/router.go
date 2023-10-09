@@ -5,6 +5,7 @@ import (
 	"containerup/container"
 	"containerup/image"
 	"containerup/login"
+	"containerup/system"
 	"containerup/wsrouter/wstypes"
 	"context"
 	"github.com/gorilla/websocket"
@@ -120,6 +121,10 @@ func router(ctx context.Context, msg *wstypes.WsReqMessage, writer chan<- *wstyp
 		container.SubscribeToContainerStats(ctx, msg, writer)
 	case "unsubscribeToContainerStats":
 		container.UnsubscribeToContainerStats(ctx, msg, writer)
+	case "subscribeToSystemStats":
+		system.SubscribeToSystemStats(ctx, msg, writer)
+	case "unsubscribeToSystemStats":
+		system.UnsubscribeToSystemStats(ctx, msg, writer)
 	default:
 		notFound(ctx, msg, writer)
 	}
