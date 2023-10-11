@@ -71,6 +71,10 @@ func SubscribeToSystemStats(ctx context.Context, msg *wstypes.WsReqMessage, writ
 		ContainersRunning int     `json:"containers_running"`
 		ImagesTotal       int     `json:"images_total"`
 		ImagesInUse       int     `json:"images_in_use"`
+		NetworkIn         uint64  `json:"network_in"`
+		NetworkOut        uint64  `json:"network_out"`
+		BlockIn           uint64  `json:"block_in"`
+		BlockOut          uint64  `json:"block_out"`
 	}
 
 	cpuCount := runtime.NumCPU()
@@ -149,6 +153,10 @@ func SubscribeToSystemStats(ctx context.Context, msg *wstypes.WsReqMessage, writ
 					ContainersRunning: ctnRunning,
 					ImagesTotal:       imgTotal,
 					ImagesInUse:       imgInUse,
+					NetworkIn:         ctnStat.NetworkIn,
+					NetworkOut:        ctnStat.NetworkOut,
+					BlockIn:           ctnStat.BlockIn,
+					BlockOut:          ctnStat.BlockOut,
 				},
 			}
 			lastIdleCpuNano = idleCpuNano

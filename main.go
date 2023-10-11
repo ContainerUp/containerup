@@ -9,12 +9,17 @@ import (
 	"containerup/system"
 	"containerup/utils"
 	"containerup/wsrouter"
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 )
 
@@ -75,8 +80,27 @@ func main() {
 	registerStaticFiles(r)
 
 	http.Handle("/", r)
-	err = http.ListenAndServe(*fListen, nil)
-	if err != nil {
+
+	var wg sync.WaitGroup
+	srv := http.Server{Addr: *fListen}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err = srv.ListenAndServe()
+	}()
+
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		srv.Shutdown(ctx)
+	}()
+
+	wg.Wait()
+	if !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 }

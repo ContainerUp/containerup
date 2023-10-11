@@ -14,6 +14,7 @@ var staticContents embed.FS
 
 var spaPaths = []string{
 	"/",
+	"/overview",
 	"/containers",
 	"/containers/{any:.+}",
 	"/containers_create",

@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/containers/podman/v4/libpod/define"
 	"github.com/containers/podman/v4/pkg/bindings/containers"
 	"sync"
 )
@@ -118,8 +119,12 @@ func UnsubscribeToContainerStats(ctx context.Context, msg *wstypes.WsReqMessage,
 }
 
 type TotalStats struct {
-	CpuNano uint64
-	Memory  uint64
+	CpuNano    uint64
+	Memory     uint64
+	NetworkIn  uint64
+	NetworkOut uint64
+	BlockIn    uint64
+	BlockOut   uint64
 }
 
 func TotalStatsStream(ctx context.Context, interval int) (<-chan *TotalStats, error) {
@@ -137,34 +142,53 @@ func TotalStatsStream(ctx context.Context, interval int) (<-chan *TotalStats, er
 
 	go func() {
 		defer close(output)
-		prevCpu := map[string]uint64{}
+		prev := map[string]define.ContainerStats{}
 		first := true
 
 		for report := range ch {
 			totalCpu := uint64(0)
 			totalMem := uint64(0)
-			currentCpu := map[string]uint64{}
+			netIn, netOut := uint64(0), uint64(0)
+			blkIn, blkOut := uint64(0), uint64(0)
+			current := map[string]define.ContainerStats{}
 
 			for _, rpt := range report.Stats {
-				currentCpu[rpt.ContainerID] = rpt.CPUNano
+				current[rpt.ContainerID] = rpt
 
-				if p, ok := prevCpu[rpt.ContainerID]; ok {
-					totalCpu += rpt.CPUNano - p
+				if p, ok := prev[rpt.ContainerID]; ok {
+					totalCpu += rpt.CPUNano - p.CPUNano
+					netIn += rpt.NetInput - p.NetInput
+					netOut += rpt.NetOutput - p.NetOutput
+					blkIn += rpt.BlockInput - p.BlockInput
+					blkOut += rpt.BlockOutput - p.BlockOutput
 				} else {
+					// new container
 					totalCpu += rpt.CPUNano
+					netIn += rpt.NetInput
+					netOut += rpt.NetOutput
+					blkIn += rpt.BlockInput
+					blkOut += rpt.BlockOutput
 				}
 				totalMem += rpt.MemUsage
 			}
-			prevCpu = currentCpu
+			prev = current
 
 			if first {
 				totalCpu = 0
+				netIn = 0
+				netOut = 0
+				blkIn = 0
+				blkOut = 0
 				first = false
 			}
 
 			output <- &TotalStats{
-				CpuNano: totalCpu,
-				Memory:  totalMem,
+				CpuNano:    totalCpu,
+				Memory:     totalMem,
+				NetworkIn:  netIn / uint64(interval),
+				NetworkOut: netOut / uint64(interval),
+				BlockIn:    blkIn / uint64(interval),
+				BlockOut:   blkOut / uint64(interval),
 			}
 		}
 	}()
