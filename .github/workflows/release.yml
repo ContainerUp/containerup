@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       BUILD_NUM: ${{ steps.build_num.outputs.BUILD_NUM }}
+      PRERELEASE: ${{ steps.release_type.outputs.PRERELEASE }}
     steps:
       - name: Generate BUILD number
         id: build_num
@@ -20,12 +21,19 @@ jobs:
           BUILD_NUM=$(date -u +%Y%m%d%H%M%S)
           echo "BUILD_NUM=$BUILD_NUM"
           echo "BUILD_NUM=$BUILD_NUM" >> "$GITHUB_OUTPUT"
+      - name: Check release type
+        id: release_type
+        run: |
+          PRERELEASE=false
+          echo "${GITHUB_REF_NAME}" | grep -q - && PRERELEASE=true
+          echo "PRERELEASE=${PRERELEASE}"
+          echo "PRERELEASE=${PRERELEASE}" >> "$GITHUB_OUTPUT"
 
   build-frontend:
     uses: ContainerUp/containerup-web/.github/workflows/release.yml@main
     needs: metadata
     with:
-      git_ref: ${{ github.action_ref }}
+      git_ref: ${{ github.ref_name }}
       build_num: ${{ needs.metadata.outputs.BUILD_NUM }}
 
   build-backend:
@@ -34,8 +42,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.git_ref }}
+      - name: Check if version matches
+        run: |
+          VERSION=$(cat VERSION)
+          if [[ -z "$VERSION" ]]; then
+              echo "empty VERSION"
+              exit 1
+          fi
+          if [[ "GIT_TAG" != "$VERSION"* ]]; then
+              echo "VERSION=${VERSION} but GIT_TAG=${GIT_TAG}"
+              exit 1
+          fi
+          echo -n "GIT_TAG" > VERSION
+        env:
+          GIT_TAG: ${{ github.ref_name }}
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
@@ -67,6 +87,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           fail_on_unmatched_files: true
+          draft: true
+          prerelease: ${{ needs.metadata.outputs.PRERELEASE }}
           files: |
             containerup_linux_amd64
             containerup_linux_arm64
