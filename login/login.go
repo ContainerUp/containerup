@@ -13,6 +13,7 @@ import (
 
 type session struct {
 	expire time.Time
+	use    uint
 }
 
 var (
@@ -29,7 +30,7 @@ func init() {
 			now := time.Now()
 			sessionMutex.Lock()
 			for k, s := range sessionMap {
-				if s.expire.Before(now) {
+				if s.use == 0 && s.expire.Before(now) {
 					delete(sessionMap, k)
 				}
 			}

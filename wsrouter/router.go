@@ -25,7 +25,7 @@ func Entry(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if !login.WebsocketAuth(ws) {
+	if !login.WebsocketAuth(ws, req.Context()) {
 		return
 	}
 

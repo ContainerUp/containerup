@@ -1,6 +1,7 @@
 package login
 
 import (
+	"context"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"strings"
@@ -26,8 +27,21 @@ func checkKey(key string) bool {
 		return false
 	}
 
-	s.expire = now.Add(time.Hour)
+	s.use += 1
 	return true
+}
+
+func unuseKey(key string) {
+	sessionMutex.Lock()
+	defer sessionMutex.Unlock()
+
+	s := sessionMap[key]
+	if s == nil {
+		return
+	}
+
+	s.expire = time.Now().Add(time.Hour)
+	s.use -= 1
 }
 
 func Guard(next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
@@ -38,12 +52,13 @@ func Guard(next func(http.ResponseWriter, *http.Request)) func(http.ResponseWrit
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
+		defer unuseKey(key)
 
 		next(w, req)
 	}
 }
 
-func WebsocketAuth(conn *websocket.Conn) bool {
+func WebsocketAuth(conn *websocket.Conn, ctx context.Context) bool {
 	_, key, err := conn.ReadMessage()
 	if err != nil {
 		return false
@@ -53,6 +68,11 @@ func WebsocketAuth(conn *websocket.Conn) bool {
 		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4001, "invalid key"))
 		return false
 	}
+
+	go func() {
+		<-ctx.Done()
+		unuseKey(string(key))
+	}()
 
 	return true
 }
