@@ -23,6 +23,23 @@ var (
 	subMutex sync.Mutex
 )
 
+type sysStat struct {
+	CpuPodman         float64 `json:"cpu_podman"`
+	CpuOther          float64 `json:"cpu_other"`
+	CpuTotal          uint64  `json:"cpu_total"`
+	MemPodman         uint64  `json:"mem_podman"`
+	MemOther          uint64  `json:"mem_other"`
+	MemTotal          uint64  `json:"mem_total"`
+	ContainersTotal   int     `json:"containers_total"`
+	ContainersRunning int     `json:"containers_running"`
+	ImagesTotal       int     `json:"images_total"`
+	ImagesInUse       int     `json:"images_in_use"`
+	NetworkIn         uint64  `json:"network_in"`
+	NetworkOut        uint64  `json:"network_out"`
+	BlockIn           uint64  `json:"block_in"`
+	BlockOut          uint64  `json:"block_out"`
+}
+
 func SubscribeToSystemStats(ctx context.Context, msg *wstypes.WsReqMessage, writer chan<- *wstypes.WsRespMessage) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -59,24 +76,6 @@ func SubscribeToSystemStats(ctx context.Context, msg *wstypes.WsReqMessage, writ
 	listOpts := (&containers.ListOptions{}).WithAll(true)
 
 	var wg sync.WaitGroup
-
-	type sysStat struct {
-		CpuPodman         float64 `json:"cpu_podman"`
-		CpuOther          float64 `json:"cpu_other"`
-		CpuTotal          uint64  `json:"cpu_total"`
-		MemPodman         uint64  `json:"mem_podman"`
-		MemOther          uint64  `json:"mem_other"`
-		MemTotal          uint64  `json:"mem_total"`
-		ContainersTotal   int     `json:"containers_total"`
-		ContainersRunning int     `json:"containers_running"`
-		ImagesTotal       int     `json:"images_total"`
-		ImagesInUse       int     `json:"images_in_use"`
-		NetworkIn         uint64  `json:"network_in"`
-		NetworkOut        uint64  `json:"network_out"`
-		BlockIn           uint64  `json:"block_in"`
-		BlockOut          uint64  `json:"block_out"`
-	}
-
 	cpuCount := runtime.NumCPU()
 
 	wg.Add(1)
