@@ -97,7 +97,7 @@ jobs:
         with:
           image: containerup
           tags: ${{ github.ref_name }}
-          archs: amd64, arm64
+          platforms: linux/amd64, linux/arm64
           containerfiles: |
             ./Containerfile
       - name: Push to quay.io
