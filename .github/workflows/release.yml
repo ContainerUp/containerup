@@ -83,7 +83,7 @@ jobs:
         env:
           GOARCH: arm64
           GOOS: linux
-      - name : Release
+      - name: Release
         uses: softprops/action-gh-release@v1
         with:
           fail_on_unmatched_files: true
@@ -92,3 +92,19 @@ jobs:
           files: |
             containerup_linux_amd64
             containerup_linux_arm64
+      - name: Build containers
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: containerup
+          tags: ${{ github.ref_name }}
+          archs: amd64, arm64
+          containerfiles: |
+            ./Containerfile
+      - name: Push to quay.io
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: containerup
+          tags: ${{ github.ref_name }}
+          registry: quay.io/containerup
+          username: containerup+github
+          password: ${{ secrets.QUAY_IO_PASSWORD }}

@@ -1,6 +1,7 @@
-FROM alpine:3.18
+FROM docker.io/library/alpine:3.18
+ARG TARGETARCH
 COPY mime.types /etc
-COPY containerup /usr/bin
+COPY containerup_linux_$TARGETARCH /usr/bin/containerup
 COPY entrypoint.sh /
 EXPOSE 3876
 VOLUME /run/podman/podman.sock
