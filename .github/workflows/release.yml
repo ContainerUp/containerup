@@ -100,11 +100,12 @@ jobs:
             containerup_linux_arm64
             containerup_linux_arm
       - name: Build containers
-        uses: redhat-actions/buildah-build@v2
+        uses: ContainerUp/buildah-build@v2
         with:
           image: containerup
           tags: ${{ github.ref_name }}
           platforms: linux/amd64, linux/arm64, linux/arm
+          buildah-in-podman: true
           containerfiles: |
             ./Containerfile
       - name: Push to quay.io
