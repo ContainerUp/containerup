@@ -84,6 +84,11 @@ jobs:
         env:
           GOARCH: arm64
           GOOS: linux
+      - name: Build project for linux-arm
+        run: ./build.sh
+        env:
+          GOARCH: arm
+          GOOS: linux
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
@@ -93,12 +98,13 @@ jobs:
           files: |
             containerup_linux_amd64
             containerup_linux_arm64
+            containerup_linux_arm
       - name: Build containers
         uses: redhat-actions/buildah-build@v2
         with:
           image: containerup
           tags: ${{ github.ref_name }}
-          platforms: linux/amd64, linux/arm64
+          platforms: linux/amd64, linux/arm64, linux/arm
           containerfiles: |
             ./Containerfile
       - name: Push to quay.io
