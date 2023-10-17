@@ -27,7 +27,7 @@ var (
 	fListen   = flag.String("listen", "127.0.0.1:3876", "address to listen")
 	fPodman   = flag.String("podman", "unix://run/podman/podman.sock", "uri of podman")
 	vLegacy   = flag.Bool("v3", false, "if the version of Podman is v3")
-	fPassword = flag.String("password", "", "sha256 hashed password, generate `hash` using command 'echo -n \"username:password\" | sha256sum'")
+	fPassword = flag.String("password", "", "sha256 hashed password, generate `hash` using command 'echo -n <username>:<password> | sha256sum'")
 	fVersion  = flag.Bool("version", false, "show version")
 )
 
