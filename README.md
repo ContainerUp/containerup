@@ -35,4 +35,4 @@ go run -tags "$TAGS" containerup
 
 The static web files aren't included, as the frontend repository will do a reverse proxy for you.
 
-Then [run the frontend](https://github.com/ContainerUp/containerup-web#typical-way)).
+Then [run the frontend](https://github.com/ContainerUp/containerup-web#typical-way).
