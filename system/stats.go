@@ -104,6 +104,12 @@ func SubscribeToSystemStats(ctx context.Context, msg *wstypes.WsReqMessage, writ
 				first = false
 			}
 
+			if cpuOther < 0 {
+				// buggy sometimes? dirty fix
+				cpuOther = 0
+				cpuIdle = cpuTotal - cpuPodman - cpuOther
+			}
+
 			memTotalKB, memAvailableKB, err := systemMemInfo()
 			if err != nil {
 				onError(err)
