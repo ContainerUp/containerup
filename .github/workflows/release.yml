@@ -100,35 +100,22 @@ jobs:
             containerup_linux_arm64
             containerup_linux_arm
       - name: Build containers
-        run: |
-          chmod 777 .
-          podman run -d --name podman --user podman --device /dev/fuse:rw -v .:/wd ${PODMAN_IMAGE} tail -f /dev/null
-          pmipm="podman exec podman"
-
-          podman manifest create ${IMAGE_NAME}
-          
-          $pmipm podman build -t containerup:amd64 --platform linux/amd64 -f /wd/Containerfile /wd
-          $pmipm podman save --format oci-archive containerup:amd64 -o /wd/containerup-amd64.tar
-          podman manifest add ${IMAGE_NAME} oci-archive:containerup-amd64.tar
-          
-          $pmipm podman build -t containerup:arm64 --platform linux/arm64 -f /wd/Containerfile /wd
-          $pmipm podman save --format oci-archive containerup:arm64 -o /wd/containerup-arm64.tar
-          podman manifest add ${IMAGE_NAME} oci-archive:containerup-arm64.tar
-          
-          $pmipm podman build -t containerup:arm --platform linux/arm -f /wd/Containerfile /wd
-          $pmipm podman save --format oci-archive containerup:arm -o /wd/containerup-arm.tar
-          podman manifest add ${IMAGE_NAME} oci-archive:containerup-arm.tar
-          
-          podman kill podman
-
-        env:
-          PODMAN_IMAGE: "quay.io/containers/podman:v4.6"
-          IMAGE_NAME: containerup:${{ github.ref_name }}
+        uses: ContainerUp/podman-in-podman-build@v1
+        with:
+          podman-image: quay.io/containers/podman:v4.6
+          platforms: |
+            linux/amd64
+            linux/arm64
+            linux/arm
+          repository: containerup
+          tags: |
+            latest
+            ${{ github.ref_name }}
       - name: Push to quay.io
         uses: redhat-actions/push-to-registry@v2
         with:
           image: containerup
-          tags: ${{ github.ref_name }}
+          tags: latest ${{ github.ref_name }}
           registry: quay.io/containerup
           username: containerup+github
           password: ${{ secrets.QUAY_IO_PASSWORD }}
