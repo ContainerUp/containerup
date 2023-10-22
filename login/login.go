@@ -2,9 +2,8 @@ package login
 
 import (
 	"containerup/utils"
-	"crypto/sha256"
 	"encoding/json"
-	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"sync"
@@ -17,7 +16,8 @@ type session struct {
 }
 
 var (
-	pwd string
+	username     string
+	passwordHash []byte
 
 	sessionMap   = make(map[string]*session)
 	sessionMutex sync.Mutex
@@ -39,11 +39,16 @@ func init() {
 	}()
 }
 
-func InitPassword(p string) {
-	if len(p) != 64 {
-		log.Fatalf("invalid sha256 hashed password")
+func InitLogin(u, p string) {
+	if u == "" {
+		log.Fatalf("Invalid username")
 	}
-	pwd = p
+	username = u
+	passwordHash = []byte(p)
+
+	if _, err := bcrypt.Cost(passwordHash); err != nil {
+		log.Fatalf("Invalid password hash: %v", err)
+	}
 }
 
 type loginReq struct {
@@ -59,10 +64,19 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	str := fmt.Sprintf("%s:%s", d.Username, d.Password)
-	result := fmt.Sprintf("%x", sha256.Sum256([]byte(str)))
+	pass := true
+	if d.Username != username {
+		pass = false
+		log.Printf("username mismatch: %s", d.Username)
+	}
+	if pass {
+		if err := bcrypt.CompareHashAndPassword(passwordHash, []byte(d.Password)); err != nil {
+			pass = false
+			log.Printf("password mismatch")
+		}
+	}
 
-	if result != pwd {
+	if !pass {
 		time.Sleep(time.Second)
 		http.Error(w, "invalid credentials", http.StatusUnauthorized)
 		return

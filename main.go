@@ -24,11 +24,17 @@ import (
 )
 
 var (
-	fListen   = flag.String("listen", "127.0.0.1:3876", "address to listen")
-	fPodman   = flag.String("podman", "unix://run/podman/podman.sock", "uri of podman")
-	vLegacy   = flag.Bool("v3", false, "if the version of Podman is v3")
-	fPassword = flag.String("password", "", "sha256 hashed password, generate `hash` using command 'echo -n <username>:<password> | sha256sum'")
-	fVersion  = flag.Bool("version", false, "show version")
+	fListen       = flag.String("listen", "127.0.0.1:3876", "Address to listen.")
+	fPodman       = flag.String("podman", "unix:/run/podman/podman.sock", "`URL` of Podman.")
+	vLegacy       = flag.Bool("v3", false, "Connect to Podman with a v3 legacy version.")
+	fUsername     = flag.String("username", "podman", "The username to be used on the web.")
+	fPasswordHash = flag.String("password-hash", "",
+		"REQUIRED. The bcrypt hash of password to be used on the web. "+
+			"Generate a password `hash` by using argument --generate-hash")
+	fGenerateHash = flag.Bool("generate-hash", false,
+		"Generate a hash from your password, then exit. "+
+			"For security reasons, you have to input your password interactively.")
+	fVersion = flag.Bool("version", false, "Show the version of ContainerUp, then exit.")
 )
 
 var (
@@ -43,10 +49,14 @@ func main() {
 		showVersion()
 	}
 
+	if *fGenerateHash {
+		login.GenerateHash()
+	}
+
 	if *vLegacy {
 		adapter.UseLegacy()
 	}
-	login.InitPassword(*fPassword)
+	login.InitLogin(*fUsername, *fPasswordHash)
 
 	chainConn, err := conn.ConnectionChainer(*fPodman)
 	if err != nil {
