@@ -39,4 +39,5 @@ LDFLAGS=(
 # Podman tags
 TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
 
+export CGO_ENABLED=0
 go build -ldflags "${LDFLAGS[*]} -w -s" -gcflags=all=-l -tags "$TAGS" -trimpath -o "${PACKAGE}_${GOOS}_${GOARCH}"
