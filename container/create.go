@@ -128,7 +128,6 @@ func Create(w http.ResponseWriter, req *http.Request) {
 			shares := uint64(res.CpuShares)
 			limitCpu.Shares = &shares
 			hasCpuLimit = true
-			resLimit.CPU = limitCpu
 			createCmd = append(createCmd, "--cpu-shares", strconv.Itoa(res.CpuShares))
 		}
 		if res.CpuCores > 0 {
