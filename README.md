@@ -4,6 +4,11 @@ This repository is the backend of [ContainerUp](https://github.com/ContainerUp) 
 a [Podman](https://podman.io/) manager in your browser.
 It works alongside the [frontend](https://github.com/ContainerUp/containerup-web) project.
 
+> [!NOTE]
+> If you want to know how to use ContainerUp, visit [containerup.org](https://containerup.org/).
+> 
+> If you like this project, ⭐️ give a star, or 💰 sponsor the contributor!
+
 ## How to get started
 
 ### If you don't want to get involved in the frontend development
