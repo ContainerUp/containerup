@@ -53,6 +53,20 @@ func ContainerCommit(ctx context.Context, nameOrID string, options *containers.C
 	return containers.Commit(ctx, nameOrID, options)
 }
 
+func ContainerRename(ctx context.Context, nameOrId string, options *containers.RenameOptions) error {
+	if legacy {
+		return v3adapter.ContainerRename(ctx, nameOrId, options)
+	}
+	return containers.Rename(ctx, nameOrId, options)
+}
+
+func ContainerRunHealthCheck(ctx context.Context, nameOrId string, options *containers.HealthCheckOptions) (*define.HealthCheckResults, error) {
+	if legacy {
+		return v3adapter.ContainerRunHealthCheck(ctx, nameOrId, options)
+	}
+	return containers.RunHealthCheck(ctx, nameOrId, options)
+}
+
 func ContainerInspect(ctx context.Context, nameOrID string, options *containers.InspectOptions) (*define.InspectContainerData, error) {
 	if legacy {
 		return v3adapter.ContainerInspect(ctx, nameOrID, options)

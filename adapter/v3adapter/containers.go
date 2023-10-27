@@ -176,6 +176,59 @@ func ContainerRemove(ctx context.Context, nameOrID string, options *containers.R
 	return []*reports.RmReport{{Id: nameOrID}}, nil
 }
 
+func ContainerRename(ctx context.Context, nameOrID string, options *containers.RenameOptions) error {
+	conn, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	params, err := options.ToParams()
+	if err != nil {
+		return err
+	}
+	ep := fmt.Sprintf("/containers/%s/rename", nameOrID)
+	resp, err := conn.DoRequest(ctx, nil, http.MethodPost, ep, params)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if err := checkResp(resp); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ContainerRunHealthCheck(ctx context.Context, nameOrID string, options *containers.HealthCheckOptions) (*define.HealthCheckResults, error) {
+	conn, err := getClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	params, err := options.ToParams()
+	if err != nil {
+		return nil, err
+	}
+	ep := fmt.Sprintf("/containers/%s/healthcheck", nameOrID)
+	resp, err := conn.DoRequest(ctx, nil, http.MethodGet, ep, params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if err := checkResp(resp); err != nil {
+		return nil, err
+	}
+
+	var result define.HealthCheckResults
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func ContainerCommit(ctx context.Context, nameOrID string, options *containers.CommitOptions) (entities.IDResponse, error) {
 	var result entities.IDResponse
 
