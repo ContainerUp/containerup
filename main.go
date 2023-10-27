@@ -7,6 +7,7 @@ import (
 	"containerup/image"
 	"containerup/login"
 	"containerup/system"
+	"containerup/update"
 	"containerup/utils"
 	"containerup/wsrouter"
 	"context"
@@ -53,9 +54,18 @@ func main() {
 		login.GenerateHash()
 	}
 
+	if val := os.Getenv("CONTAINERUP_UPDATE_PING"); val != "" {
+		update.Ping()
+	}
+
 	if *vLegacy {
 		adapter.UseLegacy()
 	}
+
+	if val := os.Getenv("CONTAINER_UPDATE_RUN"); val != "" {
+		update.Updater()
+	}
+
 	login.InitLogin(*fUsername, *fPasswordHash)
 
 	chainConn, err := conn.ConnectionChainer(*fPodman)
@@ -68,6 +78,7 @@ func main() {
 
 	api := r.PathPrefix("/api").Subrouter()
 
+	api.HandleFunc("/ping", update.Pong)
 	api.HandleFunc("/login", chainLogin(timeout, login.Login)).Methods(http.MethodPost)
 
 	api.HandleFunc("/container", chain(chainConn, timeout, container.List)).Methods(http.MethodGet)
