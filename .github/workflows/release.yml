@@ -9,39 +9,12 @@ permissions:
   contents: write
 
 jobs:
-  metadata:
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      BUILD_NUM: ${{ steps.build_num.outputs.BUILD_NUM }}
-      PRERELEASE: ${{ steps.release_type.outputs.PRERELEASE }}
-    steps:
-      - name: Generate BUILD number
-        id: build_num
-        run: |
-          BUILD_NUM=$(date -u +%Y%m%d%H%M%S)
-          echo "BUILD_NUM=$BUILD_NUM"
-          echo "BUILD_NUM=$BUILD_NUM" >> "$GITHUB_OUTPUT"
-      - name: Check release type
-        id: release_type
-        run: |
-          PRERELEASE=false
-          echo "${GITHUB_REF_NAME}" | grep -q - && PRERELEASE=true
-          echo "PRERELEASE=${PRERELEASE}"
-          echo "PRERELEASE=${PRERELEASE}" >> "$GITHUB_OUTPUT"
-
-  build-frontend:
-    uses: ContainerUp/containerup-web/.github/workflows/release.yml@main
-    needs: metadata
-    with:
-      git_ref: ${{ github.ref_name }}
-      build_num: ${{ needs.metadata.outputs.BUILD_NUM }}
-
-  build-backend:
-    runs-on: ubuntu-latest
-    needs: [metadata, build-frontend]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Check if version matches
         run: |
           VERSION=$(cat VERSION)
@@ -53,52 +26,81 @@ jobs:
               echo "VERSION=${VERSION} but GIT_TAG=${GIT_TAG}"
               exit 1
           fi
-          echo -n "GIT_TAG" > VERSION
+          echo -n "${GIT_TAG}" > VERSION
         env:
           GIT_TAG: ${{ github.ref_name }}
+
+      - name: Metadata
+        id: metadata
+        run: |
+          BUILD_NUM=$(date -u +%Y%m%d%H%M%S)
+          echo "BUILD_NUM=$BUILD_NUM (env)"
+          echo "BUILD_NUM=$BUILD_NUM" >> "$GITHUB_ENV"
+          
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          echo "COMMIT_HASH=$COMMIT_HASH (env)"
+          echo "COMMIT_HASH=$COMMIT_HASH" >> ${GITHUB_ENV}
+          
+          PRERELEASE=false
+          echo "${GITHUB_REF_NAME}" | grep -q - && PRERELEASE=true
+          echo "PRERELEASE=${PRERELEASE} (output)"
+          echo "PRERELEASE=${PRERELEASE}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install npm dependencies
+        run: |
+          cd web
+          npm install
+
+      - name: Build frontend
+        run: |
+          export REACT_APP_CONTAINERUP_VERSION=$(cat VERSION)
+          export REACT_APP_CONTAINERUP_BUILD=${BUILD_NUM}
+          export REACT_APP_CONTAINERUP_COMMIT=${COMMIT_HASH}
+          cd web
+          npm run build
+
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: '^1.19.0'
           check-latest: true
-      - name: Copy static files
-        uses: actions/download-artifact@v3
-        with:
-          name: web-build
-          path: web/
-      - name: Metadata
-        run: |
-          echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> ${GITHUB_ENV}
-          echo "BUILD_NUM=${BUILD_NUM}" >> ${GITHUB_ENV}
-          echo "FE_COMMIT_HASH=${FE_COMMIT_HASH}" >> ${GITHUB_ENV}
-        env:
-          BUILD_NUM: ${{ needs.metadata.outputs.BUILD_NUM }}
-          FE_COMMIT_HASH: ${{ needs.build-frontend.outputs.COMMIT }}
+
       - name: Build project for linux-amd64
         run: ./build.sh
         env:
           GOARCH: amd64
           GOOS: linux
+
       - name: Build project for linux-arm64
         run: ./build.sh
         env:
           GOARCH: arm64
           GOOS: linux
+
       - name: Build project for linux-arm
         run: ./build.sh
         env:
           GOARCH: arm
           GOOS: linux
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           fail_on_unmatched_files: true
           draft: true
-          prerelease: ${{ needs.metadata.outputs.PRERELEASE }}
+          prerelease: ${{ steps.metadata.PRERELEASE }}
           files: |
             containerup_linux_amd64
             containerup_linux_arm64
             containerup_linux_arm
+
       - name: Build containers
         uses: ContainerUp/podman-in-podman-build@v1
         with:
@@ -111,6 +113,7 @@ jobs:
           tags: |
             latest
             ${{ github.ref_name }}
+
       - name: Push to quay.io
         uses: redhat-actions/push-to-registry@v2
         with:
@@ -119,8 +122,9 @@ jobs:
           registry: quay.io/containerup
           username: containerup+github
           password: ${{ secrets.QUAY_IO_PASSWORD }}
+
       - name: Push to quay.io (latest)
-        if: ${{ needs.metadata.outputs.PRERELEASE == 'false' }}
+        if: ${{ steps.metadata.PRERELEASE == 'false' }}
         uses: redhat-actions/push-to-registry@v2
         with:
           image: containerup

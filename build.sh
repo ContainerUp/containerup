@@ -9,11 +9,6 @@ if [[ -z "$COMMIT_HASH" ]]; then
   exit 1
 fi
 
-if [[ -z "$FE_COMMIT_HASH" ]]; then
-  echo "Missing env FE_COMMIT_HASH"
-  exit 1
-fi
-
 if [[ -z "$BUILD_NUM" ]]; then
   echo "Missing env BUILD_NUM"
   exit 1
@@ -32,7 +27,6 @@ fi
 LDFLAGS=(
   "-X '${PACKAGE}/system.Version=${VERSION}'"
   "-X '${PACKAGE}/system.CommitHash=${COMMIT_HASH}'"
-  "-X '${PACKAGE}/system.FrontendCommitHash=${FE_COMMIT_HASH}'"
   "-X '${PACKAGE}/system.BuildNum=${BUILD_NUM}'"
 )
 

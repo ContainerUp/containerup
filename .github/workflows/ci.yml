@@ -10,7 +10,7 @@ on:
       - '.github/**'
 
 jobs:
-  build:
+  build-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,4 +22,31 @@ jobs:
       - name: Build project
         run: |
           TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
+          mkdir -p web/build
+          touch web/build/empty
           go build -tags "$TAGS"
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install npm dependencies
+        run: |
+          cd web
+          npm install
+      - name: Build project
+        run: |
+          export REACT_APP_CONTAINERUP_VERSION=${GITHUB_REF_NAME}
+          export REACT_APP_CONTAINERUP_BUILD=$(date -u +%Y%m%d%H%M%S)
+          export REACT_APP_CONTAINERUP_COMMIT=${GITHUB_SHA::7}
+          echo BUILD=${REACT_APP_CONTAINERUP_BUILD}
+          echo COMMIT=${REACT_APP_CONTAINERUP_COMMIT}
+          cd web
+          npm run build
