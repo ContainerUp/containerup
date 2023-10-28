@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-//go:embed web/*
+//go:embed web/build/*
 var staticContents embed.FS
 
 var spaPaths = []string{
@@ -32,7 +32,7 @@ var staticFiles = []string{
 
 func handleFile(fileName string) func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		d, err := staticContents.ReadFile("web" + fileName)
+		d, err := staticContents.ReadFile("web/build" + fileName)
 		if err != nil {
 			http.NotFound(writer, request)
 			return
