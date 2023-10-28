@@ -347,7 +347,7 @@ function CreateVolume({volumes, imageDetail, onEdited, onConfirm}) {
     };
 
     const handleRevert = () => {
-        setEditing(editingGenerator); // todo fix
+        setEditing(editingGenerator);
         setEditVolumes(volumes);
         setVersion(v => v + 1);
     };
