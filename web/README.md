@@ -19,11 +19,8 @@ Maybe you want to develop the backend, and don't get involved in the frontend de
 Use a Podman container to build everything!
 
 ```shell
-# clone this repository first
-git clone --depth=1 https://github.com/ContainerUp/containerup-web.git
-
 # go to the workspace
-cd containerup-web
+cd web
 
 # build
 BUILD=$(date -u +%Y%m%d%H%M%S)
@@ -31,7 +28,6 @@ SHA=$(git rev-parse HEAD)
 COMMIT=${SHA::7}
 podman run --rm -v .:/app -w /app -e "REACT_APP_CONTAINERUP_BUILD=$BUILD" -e "REACT_APP_CONTAINERUP_COMMIT=$COMMIT" docker.io/library/node:18 sh -c "npm install && npm run build"
 
-# your artifacts here, copy them to the working directory of the backend
 ls build
 # asset-manifest.json  favicon.ico  index.html  robots.txt  static
 ```
