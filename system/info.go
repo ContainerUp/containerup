@@ -8,10 +8,9 @@ import (
 )
 
 type containerUpInfo struct {
-	Version            string `json:"version"`
-	CommitHash         string `json:"commit_hash"`
-	FrontendCommitHash string `json:"frontend_commit_hash"`
-	BuildNum           string `json:"build_num"`
+	Version    string `json:"version"`
+	CommitHash string `json:"commit_hash"`
+	BuildNum   string `json:"build_num"`
 }
 
 type sysInfo struct {
@@ -31,10 +30,9 @@ func Info(w http.ResponseWriter, req *http.Request) {
 	utils.Return(w, &sysInfo{
 		Podman: ret,
 		ContainerUp: &containerUpInfo{
-			Version:            Version,
-			CommitHash:         CommitHash,
-			FrontendCommitHash: FrontendCommitHash,
-			BuildNum:           BuildNum,
+			Version:    Version,
+			CommitHash: CommitHash,
+			BuildNum:   BuildNum,
 		},
 	})
 }

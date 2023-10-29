@@ -1,8 +1,7 @@
 package system
 
 var (
-	Version            = "dev"
-	CommitHash         = "dev"
-	FrontendCommitHash = "dev"
-	BuildNum           = "dev"
+	Version    = "dev"
+	CommitHash = "dev"
+	BuildNum   = "dev"
 )

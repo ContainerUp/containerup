@@ -127,7 +127,7 @@ func main() {
 }
 
 func showVersion() {
-	fmt.Printf("ContainerUp version %s commit %s frontend_commit %s build %s\n", system.Version, system.CommitHash, system.FrontendCommitHash, system.BuildNum)
+	fmt.Printf("ContainerUp version %s commit %s build %s\n", system.Version, system.CommitHash, system.BuildNum)
 	os.Exit(0)
 }
 
