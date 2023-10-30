@@ -2,6 +2,7 @@ package update
 
 import (
 	"containerup/system"
+	"containerup/utils"
 	"context"
 	"fmt"
 	"io"
@@ -42,5 +43,7 @@ func Ping() {
 }
 
 func Pong(writer http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(writer, "%s", system.Version)
+	utils.Return(writer, map[string]any{
+		"version": system.Version,
+	})
 }

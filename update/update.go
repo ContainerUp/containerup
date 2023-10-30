@@ -113,7 +113,7 @@ func updater() (success bool) {
 		log.Printf("Cannot start the new container: %v", err)
 		return false
 	}
-	log.Printf("Started")
+	log.Printf("Started: %s", rpt.ID)
 	defer func() {
 		if !success {
 			err = adapter.ContainerStop(ctx0, rpt.ID, (&containers.StopOptions{}).WithTimeout(10))
