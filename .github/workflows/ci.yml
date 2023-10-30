@@ -24,15 +24,28 @@ jobs:
           TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
           mkdir -p web/build
           touch web/build/empty
+          export CGO_ENABLED=0
           go build -tags "$TAGS" -o containerup_linux_amd64
       - name: Test upgrading
         run: |
-          podman build -t containerup:latest .
+          IMAGE=containerup:latest
+          
+          echo "Build image"
+          podman build -t $IMAGE .
+
+          echo "Start old container"
           PWD_HASH='$2a$10$tRhTPH7xGTJnNUUWgH/96.klhqU2z7zEPTwqa0/KfzJa4RHrVQF0O'
-          # start the old container
-          ctnup_old=$(podman run -d --name containerup -e "CONTAINERUP_PASSWORD_HASH=${PWD_HASH}" -v $XDG_RUNTIME_DIR/podman/podman.sock:/run/podman/podman.sock containerup:latest)
-          # upgrade
-          podman run --name containerup-updater -e CONTAINERUP_UPDATE_IMAGE=containerup:latest -e CONTAINERUP_UPDATE_CURRENT_ID=${ctnup_old} -e CONTAINER_UPDATE_RUN=1 containerup:latest
+          SOCKET_VOLUME="${XDG_RUNTIME_DIR}/podman/podman.sock:/run/podman/podman.sock"
+          ENV_V3="CONTAINERUP_PODMAN_V3=1"
+          ctnup_old=$(podman run -d --name containerup -e "CONTAINERUP_PASSWORD_HASH=${PWD_HASH}" -e "$ENV_V3" -v "$SOCKET_VOLUME" $IMAGE)
+          echo $ctnup_old
+
+          echo "Do upgrade"
+          podman run --name containerup-updater -e "CONTAINERUP_UPDATE_IMAGE=$IMAGE" -e "CONTAINERUP_UPDATE_CURRENT_ID=${ctnup_old}" -e "$ENV_V3" -e "CONTAINER_UPDATE_RUN=1" -v "$SOCKET_VOLUME" $IMAGE
+
+      - name: Test cleanup
+        run: |
+          podman rm -f containerup-updater containerup containerup-old
 
   build-frontend:
     runs-on: ubuntu-latest

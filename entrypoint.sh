@@ -4,6 +4,15 @@ if [[ "$#" -gt 0 ]]; then
     exec $@
 fi
 
+ARG_V3=""
+if [[ -n "$CONTAINERUP_PODMAN_V3" ]]; then
+    ARG_V3="-v3"
+fi
+
+if [[ -n "$CONTAINER_UPDATE_RUN" ]]; then
+  exec /usr/bin/containerup $ARG_V3
+fi
+
 ARG_USERNAME=""
 if [[ -n "$CONTAINERUP_USERNAME" ]]; then
   ARG_USERNAME="-username $CONTAINERUP_USERNAME"
@@ -15,10 +24,5 @@ if [[ -z "$CONTAINERUP_PASSWORD_HASH" ]]; then
     exit 1
 fi
 ARG_PASSWORD="-password-hash $CONTAINERUP_PASSWORD_HASH"
-
-ARG_V3=""
-if [[ -n "$CONTAINERUP_PODMAN_V3" ]]; then
-    ARG_V3="-v3"
-fi
 
 exec /usr/bin/containerup -listen 0.0.0.0:3876 $ARG_USERNAME $ARG_PASSWORD $ARG_V3
