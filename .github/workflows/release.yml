@@ -63,6 +63,7 @@ jobs:
           export REACT_APP_CONTAINERUP_VERSION=$(cat VERSION)
           export REACT_APP_CONTAINERUP_BUILD=${BUILD_NUM}
           export REACT_APP_CONTAINERUP_COMMIT=${COMMIT_HASH}
+          export GENERATE_SOURCEMAP=false
           cd web
           npm run build
 
