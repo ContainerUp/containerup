@@ -23,6 +23,12 @@ const repoMatcher = [{
     func: match => {
         return `https://${match[0]}`;
     }
+}, {
+    regex: /^registry.gitlab.com\/([^/]+)\/([^/]+)\/(.+)$/,
+    func: match => {
+        let search = encodeURIComponent(match[3]);
+        return `https://gitlab.com/${match[1]}/${match[2]}/container_registry?orderBy=UPDATED&search[]=${search}`;
+    }
 }];
 
 export default function ImageRepo({repo}) {
