@@ -3,7 +3,7 @@ package utils
 import (
 	"bufio"
 	"errors"
-	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -47,7 +47,7 @@ func ChainLogger(next http.HandlerFunc) http.HandlerFunc {
 		endTime := time.Now()
 		dur := float64(endTime.Sub(startTime).Milliseconds()) / 1000
 		ip, _, _ := net.SplitHostPort(req.RemoteAddr)
-		fmt.Printf("%s %s %s %d %.3fs\n", endTime.Format(time.DateTime), ip, req.URL.Path, lw.statusCode, dur)
+		log.Printf("%s %s %d %.3fs\n", ip, req.URL.Path, lw.statusCode, dur)
 	}
 }
 
