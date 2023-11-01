@@ -33,6 +33,10 @@ Open your browser, and navigate to http://127.0.0.1:3876/.
 ### If you want to develop the frontend too
 
 ```shell
+# create an empty file
+mkdir -p web/build
+touch web/build/empty
+
 # A lot of tags required by podman
 TAGS="remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp"
 go run -tags "$TAGS" containerup
@@ -40,4 +44,4 @@ go run -tags "$TAGS" containerup
 
 The static web files aren't included, as the frontend repository will do a reverse proxy for you.
 
-Then [run the frontend](https://github.com/ContainerUp/containerup-web#typical-way).
+Then [run the frontend](https://github.com/ContainerUp/containerup/tree/main/web#typical-way).
