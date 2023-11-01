@@ -26,7 +26,7 @@
     "web-vitals": "^2.1.4",
     "xterm": "^5.2.1",
     "xterm-addon-fit": "^0.7.0",
-    "zustand": "^4.4.2"
+    "zustand": "^4.4.5"
   },
   "devDependencies": {
     "http-proxy-middleware": "^2.0.6"
