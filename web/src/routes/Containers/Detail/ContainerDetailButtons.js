@@ -69,7 +69,7 @@ const getStatusText = c => {
 
 export default function ContainerDetailButtons() {
     const navigate = useNavigate();
-    const {pathname} = useLocation();
+    const location = useLocation();
 
     const [container, setContainer] = useState(null);
     const [dialogRemoveOpen, setDialogRemoveOpen] = useState(false);
@@ -170,7 +170,7 @@ export default function ContainerDetailButtons() {
                 }
                 if (dataModel.errIsNoLogin(err)) {
                     let query = new URLSearchParams();
-                    query.append('cb', pathname);
+                    query.append('cb', location.pathname + location.search);
                     navigate('/login?' + query.toString());
                     return;
                 }
@@ -190,7 +190,7 @@ export default function ContainerDetailButtons() {
             });
 
         return () => ac.abort();
-    }, [actioning, container, navigate, pathname, action]);
+    }, [actioning, container, navigate, location, action]);
 
     const handleDialogCommitClose = useCallback(() => {
         setDialogCommitOpen(false);

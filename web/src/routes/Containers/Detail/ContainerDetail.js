@@ -36,11 +36,11 @@ tabs.forEach((t, i) => {
 
 export default function ContainerDetail() {
     const {containerId} = useParams();
-    const {pathname} = useLocation();
+    const location = useLocation();
 
     // if pathname is like /containers/0abcde3333 then redirect to overview
     const [tabVal, tabValValid] = useMemo(() => {
-        const parts = pathname.split('/');
+        const parts = location.pathname.split('/');
         // "", "containers", "0abcde3333", "overview"
         if (parts.length < 4) {
             return [0, false];
@@ -51,13 +51,13 @@ export default function ContainerDetail() {
             return [ret, true];
         }
         return [0, false];
-    }, [pathname]);
+    }, [location]);
 
     const navigate = useNavigate();
 
     useEffect(() => {
         if (!tabValValid) {
-            navigate('overview');
+            navigate(tabs[0].to);
         }
     }, [tabValValid, navigate]);
 
@@ -116,7 +116,7 @@ export default function ContainerDetail() {
         const onError = error => {
             if (dataModel.errIsNoLogin(error)) {
                 let query = new URLSearchParams();
-                query.append('cb', pathname);
+                query.append('cb', location.pathname + location.search);
                 navigate('/login?' + query.toString());
                 return;
             }
@@ -170,7 +170,7 @@ export default function ContainerDetail() {
                 clearTimeout(retryTimeout);
             }
         };
-    }, [containerId, loading, navigate, pathname]);
+    }, [containerId, loading, navigate, location]);
 
     return (
         <>
