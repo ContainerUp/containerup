@@ -26,7 +26,7 @@ jobs:
           touch web/build/empty
           export CGO_ENABLED=0
           go build -tags "$TAGS" -o containerup_linux_amd64
-      - name: Test upgrading
+      - name: Test updating
         run: |
           IMAGE=containerup:latest
           
@@ -41,11 +41,25 @@ jobs:
           echo $ctnup_old
 
           echo "Do upgrade"
-          podman run --name containerup-updater -e "CONTAINERUP_UPDATE_IMAGE=$IMAGE" -e "CONTAINERUP_UPDATE_CURRENT_ID=${ctnup_old}" -e "$ENV_V3" -e "CONTAINER_UPDATE_RUN=1" -v "$SOCKET_VOLUME" $IMAGE
+          podman run -d --name containerup-updater \
+            -e "CONTAINERUP_UPDATE_IMAGE=$IMAGE" \
+            -e "CONTAINERUP_UPDATE_CURRENT_ID=${ctnup_old}" \
+            -e "$ENV_V3" \
+            -e "CONTAINER_UPDATE_RUN=1" \
+            -v "$SOCKET_VOLUME" \
+            $IMAGE
+          
+          echo "Sleep 3s"
+          sleep 3
+          
+          echo "Check result"
+          (podman inspect containerup-updater >/dev/null 2>&1) && echo "containerup-updater is not deleted" && exit 1 || echo "containerup-updater is deleted"
+          (podman inspect containerup-old >/dev/null 2>&1) && echo "containerup-old is not deleted" && exit 1 || echo "containerup-old is deleted"
+          (podman inspect containerup-update-failure >/dev/null 2>&1) && echo "containerup-update-failure is not deleted" && exit 1 || echo "containerup-update-failure is deleted"
 
       - name: Test cleanup
         run: |
-          podman rm -f containerup-updater containerup containerup-old
+          podman rm -f containerup
 
   build-frontend:
     runs-on: ubuntu-latest
