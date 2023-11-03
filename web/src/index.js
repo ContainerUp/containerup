@@ -44,6 +44,8 @@ import {
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import Overview from "./routes/Overview/Overview";
+import System from "./routes/System/System";
+import SystemUpdate from "./routes/System/SystemUpdate";
 
 ChartJS.register(
     LinearScale,
@@ -106,8 +108,15 @@ const router = createBrowserRouter([{
         path: '/images/:imageId',
         element: <ImageDetail />
     }, {
-        path: '/info',
-        element: <SystemInfo />
+        path: '/system',
+        element: <System />,
+        children: [{
+            path: 'update',
+            element: <SystemUpdate />
+        }, {
+            path: 'info',
+            element: <SystemInfo />
+        }]
     }]
 }, {
     path: "/login",

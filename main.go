@@ -94,6 +94,8 @@ func main() {
 	api.HandleFunc("/image/{name}", chain(chainConn, timeout, image.Action)).Methods(http.MethodPost)
 
 	api.HandleFunc("/system/info", chain(chainConn, timeout, system.Info)).Methods(http.MethodGet)
+	api.HandleFunc("/system/update", chain(chainConn, timeout, system.UpdateCheck)).Methods(http.MethodGet)
+	api.HandleFunc("/system/update", chain(chainConn, timeout, system.UpdateAction)).Methods(http.MethodPost)
 
 	api.HandleFunc("/subscribe", chainWs(chainConn, wsLongTimeout, wsrouter.Entry)).Methods(http.MethodGet)
 
@@ -111,13 +113,16 @@ func main() {
 		err = srv.ListenAndServe()
 	}()
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		srv.Shutdown(ctx)
+		err := srv.Shutdown(ctx)
+		log.Printf("shutdown: %v", err)
 	}()
 
 	wg.Wait()

@@ -8,14 +8,15 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import StorageIcon from '@mui/icons-material/Storage';
 import AlbumIcon from '@mui/icons-material/Album';
 import Divider from "@mui/material/Divider";
-import InfoIcon from '@mui/icons-material/Info';
+import SettingsIcon from '@mui/icons-material/Settings';
 import {Outlet, useNavigate, useOutlet} from "react-router-dom";
 import MyContent from "../components/MyContent";
-import {Box} from "@mui/material";
+import {Badge, Box} from "@mui/material";
 import AppBarButtons from "./AppBarButtons";
 import AppBarBreadcrumb from "./AppBarBreadcrumb";
 import {SnackbarProvider} from "notistack";
 import {useGA4} from "../lib/ga4";
+import {doBackgroundUpdateCheck, useUpdateState} from "./System/updateStore";
 
 export default function Root() {
     useGA4();
@@ -35,6 +36,13 @@ export default function Root() {
             navigate('/overview');
         }
     }, [navigate, outlet]);
+
+    useEffect(() => {
+        const cancel = doBackgroundUpdateCheck();
+        return () => cancel();
+    });
+
+    const hasUpdate = useUpdateState(state => !!state.update);
 
     return (
         <>
@@ -66,10 +74,14 @@ export default function Root() {
                         />
                         <Divider />
                         <MyDrawerItem
-                            text="System Info"
+                            text="System"
                             drawerOpen={drawerOpen}
-                            icon={<InfoIcon />}
-                            path='/info'
+                            icon={
+                                <Badge color="warning" variant="dot" invisible={!hasUpdate}>
+                                    <SettingsIcon />
+                                </Badge>
+                            }
+                            path='/system'
                         />
                         <MyDrawerItem
                             text="Logout"

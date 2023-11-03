@@ -2,6 +2,7 @@ package update
 
 import (
 	"containerup/adapter"
+	"containerup/system"
 	"context"
 	"errors"
 	"fmt"
@@ -36,15 +37,15 @@ func Updater() {
 func updater() (success bool) {
 	log.Printf("You're running ContainerUp updater")
 
-	image := os.Getenv("CONTAINERUP_UPDATE_IMAGE")
+	image := os.Getenv(system.ENV_UPDATE_IMAGE)
 	if image == "" {
-		log.Fatalf("Empty env var CONTAINERUP_UPDATE_IMAGE")
+		log.Fatalf("Empty env var %s", system.ENV_UPDATE_IMAGE)
 	}
 	log.Printf("New image: %s", image)
 
-	currentContainerId := os.Getenv("CONTAINERUP_UPDATE_CURRENT_ID")
+	currentContainerId := os.Getenv(system.ENV_UPDATE_CURRENT_ID)
 	if currentContainerId == "" {
-		log.Fatalf("Empty env var CONTAINERUP_UPDATE_CURRENT_ID")
+		log.Fatalf("Empty env var %s", system.ENV_UPDATE_CURRENT_ID)
 	}
 	log.Printf("Current container: %s", currentContainerId)
 
@@ -126,12 +127,13 @@ func updater() (success bool) {
 		time.Sleep(2 * time.Second)
 		log.Printf("Checking the status of the new container")
 
-		resp, err := containerExec(ctx, rpt.ID, []string{"CONTAINERUP_UPDATE_PING=1"}, []string{"/usr/bin/containerup"})
+		respStdOut, respStdErr, err := containerExec(ctx, rpt.ID, []string{"CONTAINERUP_UPDATE_PING=1"}, []string{"/usr/bin/containerup"})
 		if err != nil {
-			log.Printf("Cannot check the status: %v %s", err, resp)
+			log.Printf("Cannot check the status: %v", err)
 			continue
 		}
-		log.Printf("Result: %s", resp)
+		log.Printf("Result stdout: %s", respStdOut)
+		log.Printf("Result stderr: %s", respStdErr)
 		fatal = false
 		break
 	}
@@ -141,18 +143,20 @@ func updater() (success bool) {
 
 	log.Printf("Update succeeded!")
 
-	// todo: remove old container
+	_, err = adapter.ContainerRemove(ctx, currentContainerId, nil)
+	if err != nil {
+		log.Printf("Cannot remove old container: %v", err)
+	}
+
+	_, _ = adapter.ContainerRemove(ctx, currentContainerId, nil)
+
+	updaterHostname := system.ContainerHostname()
+	if updaterHostname != "" {
+		_, _ = adapter.ContainerRemove(ctx, updaterHostname, (&containers.RemoveOptions{}).WithForce(true).WithTimeout(10))
+	}
 
 	return true
 }
-
-const (
-	ENV_USERNAME      = "CONTAINERUP_USERNAME"
-	ENV_PASSWORD_HASH = "CONTAINERUP_PASSWORD_HASH"
-	ENV_PODMAN_V3     = "CONTAINERUP_PODMAN_V3"
-
-	URL_PODMAN = "/run/podman/podman.sock"
-)
 
 func createNewContainer(ctx context.Context, image string, current *define.InspectContainerData) (entities.ContainerCreateResponse, error) {
 	rpt := entities.ContainerCreateResponse{}
@@ -164,28 +168,28 @@ func createNewContainer(ctx context.Context, image string, current *define.Inspe
 
 	log.Printf("Parsing the configuration of the current container")
 	s.Env = make(map[string]string)
-	if val := getCurrentEnv(current, ENV_USERNAME); val != "" {
-		s.Env[ENV_USERNAME] = val
-		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", ENV_USERNAME, val))
+	if val := getCurrentEnv(current, system.ENV_USERNAME); val != "" {
+		s.Env[system.ENV_USERNAME] = val
+		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", system.ENV_USERNAME, val))
 	}
-	if val := getCurrentEnv(current, ENV_PASSWORD_HASH); val != "" {
-		s.Env[ENV_PASSWORD_HASH] = val
-		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", ENV_PASSWORD_HASH, val))
+	if val := getCurrentEnv(current, system.ENV_PASSWORD_HASH); val != "" {
+		s.Env[system.ENV_PASSWORD_HASH] = val
+		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", system.ENV_PASSWORD_HASH, val))
 	} else {
-		return rpt, fmt.Errorf("cannot find env %s", ENV_PASSWORD_HASH)
+		return rpt, fmt.Errorf("cannot find env %s", system.ENV_PASSWORD_HASH)
 	}
-	if val := getCurrentEnv(current, ENV_PODMAN_V3); val != "" {
-		s.Env[ENV_PODMAN_V3] = val
-		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", ENV_PODMAN_V3, val))
+	if val := getCurrentEnv(current, system.ENV_PODMAN_V3); val != "" {
+		s.Env[system.ENV_PODMAN_V3] = val
+		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", system.ENV_PODMAN_V3, val))
 	}
 
-	if src := getCurrentVolumePodmanURL(current); src != "" {
+	if src := system.GetCurrentVolumePodmanURL(current); src != "" {
 		s.Mounts = []spec.Mount{{
-			Destination: URL_PODMAN,
+			Destination: system.URL_PODMAN,
 			Type:        "bind",
 			Source:      src,
 		}}
-		createCmd = append(createCmd, "--volume", fmt.Sprintf("%s:%s", src, URL_PODMAN))
+		createCmd = append(createCmd, "--volume", fmt.Sprintf("%s:%s", src, system.URL_PODMAN))
 	} else {
 		return rpt, errors.New("cannot find URL of Podman")
 	}
@@ -282,15 +286,6 @@ func getCurrentEnv(data *define.InspectContainerData, key string) string {
 				}
 				continue
 			}
-		}
-	}
-	return ""
-}
-
-func getCurrentVolumePodmanURL(data *define.InspectContainerData) string {
-	for _, m := range data.Mounts {
-		if m.Type == "bind" && m.Destination == URL_PODMAN {
-			return m.Source
 		}
 	}
 	return ""
@@ -421,7 +416,7 @@ func getCurrentMemoryLimit(data *define.InspectContainerData) (int64, int64, err
 	return mem, memSwap, nil
 }
 
-func containerExec(ctx context.Context, nameOrId string, envs, cmds []string) (string, error) {
+func containerExec(ctx context.Context, nameOrId string, envs, cmds []string) (string, string, error) {
 	sessionId, err := adapter.ContainerExecCreate(ctx, nameOrId, &handlers.ExecCreateConfig{ExecConfig: types.ExecConfig{
 		Env:          envs,
 		Cmd:          cmds,
@@ -429,7 +424,7 @@ func containerExec(ctx context.Context, nameOrId string, envs, cmds []string) (s
 		AttachStderr: true,
 	}})
 	if err != nil {
-		return "", fmt.Errorf("cannot create exec session: %v", err)
+		return "", "", fmt.Errorf("cannot create exec session: %v", err)
 	}
 
 	stdOutReader, stdOutWriter := io.Pipe()
@@ -462,25 +457,24 @@ func containerExec(ctx context.Context, nameOrId string, envs, cmds []string) (s
 
 	err = adapter.ContainerExecStartAndAttach(ctx, sessionId, opts)
 	if err != nil {
-		return "", fmt.Errorf("cannot start exec session: %v", err)
+		return "", "", fmt.Errorf("cannot start exec session: %v", err)
 	}
 	stdOutWriter.Close()
 	stdErrWriter.Close()
 	wg.Wait()
-	output := outputStdOut + " " + outputStdErr
 
 	inspect, err := adapter.ContainerExecInspect(ctx, sessionId, nil)
 	if err != nil {
-		return output, fmt.Errorf("cannot inspect exec session: %v", err)
+		return "", "", fmt.Errorf("cannot inspect exec session: %v", err)
 	}
 
 	if inspect.ExitCode != 0 {
-		return output, fmt.Errorf("exit code %d", inspect.ExitCode)
+		return "", "", fmt.Errorf("exit code %d", inspect.ExitCode)
 	}
 
 	if err2 != nil || err3 != nil {
-		return output, fmt.Errorf("cannot read outputStdOut: %v %v", err2, err3)
+		return "", "", fmt.Errorf("cannot read outputStdOut: %v %v", err2, err3)
 	}
 
-	return output, nil
+	return outputStdOut, outputStdErr, nil
 }

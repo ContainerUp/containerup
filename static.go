@@ -20,7 +20,9 @@ var spaPaths = []string{
 	"/containers_create",
 	"/images",
 	"/images/{any:.+}",
-	"/info",
+	"/system",
+	"/system/info",
+	"/system/update",
 	"/login",
 	"/logout",
 }

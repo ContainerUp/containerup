@@ -325,6 +325,48 @@ const systemInfo = (abortController) => {
         .then(resp => resp.data);
 };
 
+const systemCheckUpdate = (abortController) => {
+    return axios.get('https://updates.containerup.org/updates.json', {
+        signal: abortController.signal
+    })
+        .then(resp => resp.data);
+};
+
+const systemUpdatePreCheck = (abortController) => {
+    if (!loginKey) {
+        return Promise.reject(errors.errNoLogin);
+    }
+
+    return axios.get(prefix + '/system/update', {
+        signal: abortController.signal,
+        headers: {
+            Authorization: 'Bearer ' + loginKey
+        }
+    })
+        .then(resp => resp.data);
+};
+
+const systemUpdateAction = (image, abortController) => {
+    if (!loginKey) {
+        return Promise.reject(errors.errNoLogin);
+    }
+
+    return axios.post(prefix + '/system/update', {image}, {
+        signal: abortController.signal,
+        headers: {
+            Authorization: 'Bearer ' + loginKey
+        }
+    })
+        .then(resp => resp.data);
+};
+
+const ping = (abortController) => {
+    return axios.get(prefix + '/ping', {
+        signal: abortController.signal
+    })
+        .then(resp => resp.data);
+};
+
 const dataModel = {
     errors,
     errIsNoLogin: e => {
@@ -337,6 +379,7 @@ const dataModel = {
     getLoginKeyAndPrefix,
     login,
     logout,
+    ping,
 
     containerList,
     containerAction,
@@ -350,7 +393,10 @@ const dataModel = {
     imageAction,
     imagePull,
 
-    systemInfo
+    systemInfo,
+    systemCheckUpdate,
+    systemUpdatePreCheck,
+    systemUpdateAction
 };
 
 export default dataModel;

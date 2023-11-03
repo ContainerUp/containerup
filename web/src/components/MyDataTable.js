@@ -4,7 +4,7 @@ import {Fragment} from "react";
 export default function MyDataTable({data}) {
     return (
         <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <Table sx={{ minWidth: 650 }}>
                 <TableHead>
                 {data[0] && (
                     <TableRow>
