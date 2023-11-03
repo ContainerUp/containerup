@@ -38,7 +38,7 @@ func Ping() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Response: %s\n", data)
+	fmt.Printf("%s", data)
 	os.Exit(0)
 }
 
