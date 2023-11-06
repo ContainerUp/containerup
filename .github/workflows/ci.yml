@@ -3,11 +3,7 @@ name: CI
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - '.github/**'
   pull_request:
-    paths-ignore:
-      - '.github/**'
 
 jobs:
   build-backend:
@@ -49,15 +45,21 @@ jobs:
             -v "$SOCKET_VOLUME" \
             $IMAGE
           
-          echo "Sleep 3s"
-          sleep 3
+          echo "Sleep 10s"
+          sleep 10
           
           echo "Check result"
-          (podman inspect containerup-updater >/dev/null 2>&1) && echo "containerup-updater is not deleted" && exit 1 || echo "containerup-updater is deleted"
-          (podman inspect containerup-old >/dev/null 2>&1) && echo "containerup-old is not deleted" && exit 1 || echo "containerup-old is deleted"
-          (podman inspect containerup-update-failure >/dev/null 2>&1) && echo "containerup-update-failure is not deleted" && exit 1 || echo "containerup-update-failure is deleted"
+          (podman inspect containerup-updater >/dev/null 2>&1) && echo "containerup-updater is not deleted" && podman ps -a && exit 1 || echo "containerup-updater is deleted"
+          (podman inspect containerup-old >/dev/null 2>&1) && echo "containerup-old is not deleted" && podman ps -a && exit 1 || echo "containerup-old is deleted"
+          (podman inspect containerup-update-failure >/dev/null 2>&1) && echo "containerup-update-failure is not deleted" && podman ps -a && exit 1 || echo "containerup-update-failure is deleted"
 
-      - name: Test cleanup
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
+      - name: Cleanup
         run: |
           podman rm -f containerup
 
