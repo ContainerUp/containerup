@@ -38,6 +38,10 @@ export default function ContainerDetail() {
     const {containerId} = useParams();
     const location = useLocation();
 
+    const [container, setContainer] = useState({Id: containerId});
+    const [loading, setLoading] = useState(true);
+    const [errMsg, setErrMsg] = useState('');
+
     // if pathname is like /containers/0abcde3333 then redirect to overview
     const [tabVal, tabValValid] = useMemo(() => {
         const parts = location.pathname.split('/');
@@ -63,28 +67,43 @@ export default function ContainerDetail() {
 
     useEffect(() => {
         const ctrl = getController('bar_breadcrumb');
+
+        let containerText = containerId;
+        if (container.Name) {
+            containerText = `${container.Name} (${containerId})`;
+        }
+
         const unregister = ctrl.asControllerGuest([{
             text: 'Containers',
             href: '/containers'
         }, {
-            text: containerId
+            text: containerText
         }]);
         return () => unregister();
-    }, [containerId]);
+    }, [containerId, container]);
 
     useEffect(() => {
-        document.title = 'ContainerUp - Container ' + containerId;
-    }, [containerId]);
+        let containerText = containerId;
+        if (container.Name) {
+            containerText = `${container.Name} (${containerId})`;
+        }
+        let page = '';
+        if (tabValValid) {
+            page = tabs[tabVal].label;
+        }
+
+        if (page) {
+            document.title = `ContainerUp - Container ${containerText} - ${page}`;
+        } else {
+            document.title = `ContainerUp - Container ${containerText}`;
+        }
+    }, [containerId, container, tabValValid, tabVal]);
 
     useEffect(() => {
         const ctrl = getController('bar_button');
         const unregister = ctrl.asControllerGuest('container_detail_buttons');
         return () => unregister();
     }, []);
-
-    const [container, setContainer] = useState({Id: containerId});
-    const [loading, setLoading] = useState(true);
-    const [errMsg, setErrMsg] = useState('');
 
     useEffect(() => {
         const ctrl = getController('container_detail_buttons');
