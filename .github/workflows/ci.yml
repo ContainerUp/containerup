@@ -53,12 +53,6 @@ jobs:
           (podman inspect containerup-old >/dev/null 2>&1) && echo "containerup-old is not deleted" && podman ps -a && exit 1 || echo "containerup-old is deleted"
           (podman inspect containerup-update-failure >/dev/null 2>&1) && echo "containerup-update-failure is not deleted" && podman ps -a && exit 1 || echo "containerup-update-failure is deleted"
 
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-
       - name: Cleanup
         run: |
           podman rm -f containerup
