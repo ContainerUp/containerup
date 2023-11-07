@@ -22,12 +22,10 @@ const tabs = [{
 }, {
     to: "statistics",
     label: "Statistics"
-},
-// {
-//     to: "settings",
-//     label: "Settings"
-// }
-];
+}, {
+    to: "settings",
+    label: "Settings"
+}];
 
 const tabsMap = {};
 tabs.forEach((t, i) => {

@@ -72,6 +72,22 @@ const containerAction = (containerId, action, abortController) => {
         .then(resp => resp.data);
 };
 
+const containerRename = (containerId, name, abortController) => {
+    if (!loginKey) {
+        return Promise.reject(errors.errNoLogin);
+    }
+    return axios.patch(prefix + '/container/' + containerId, {
+        type: 'rename',
+        data: name
+    },{
+        signal: abortController.signal,
+        headers: {
+            Authorization: 'Bearer ' + loginKey
+        }
+    })
+        .then(resp => resp.data);
+};
+
 const containerInspect = (containerId, readCache, abortController) => {
     if (!loginKey) {
         return Promise.reject(errors.errNoLogin);
@@ -383,6 +399,7 @@ const dataModel = {
 
     containerList,
     containerAction,
+    containerRename,
     containerInspect,
     containerLogs,
     containerExec,

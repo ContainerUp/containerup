@@ -25,7 +25,7 @@ import ContainerDetailInspect from "./routes/Containers/Detail/Inspect/Container
 import ContainerLogs from "./routes/Containers/Detail/Logs/ContainerLogs";
 import ContainerDetailStatistics from "./routes/Containers/Detail/Stat/ContainerDetailStatistics";
 import ContainerExec from "./routes/Containers/Detail/Exec/ContainerExec";
-import ContainerDetailSettings from "./routes/Containers/Detail/ContainerDetailSettings";
+import ContainerDetailSettings from "./routes/Containers/Detail/Settings/ContainerDetailSettings";
 import SystemInfo from "./routes/System/SystemInfo";
 import ImageDetail from "./routes/Images/Detail/ImageDetail";
 import ContainerCreate from "./routes/Containers/Create/ContainerCreate";

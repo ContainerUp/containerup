@@ -87,6 +87,7 @@ func main() {
 	api.HandleFunc("/container/{name}/logs", chainWs(chainConn, wsTimeout, container.Logs)).Methods(http.MethodGet)
 	api.HandleFunc("/container/{name}/exec", chainWs(chainConn, wsTimeout, container.Exec)).Methods(http.MethodGet)
 	api.HandleFunc("/container/{name}", chain(chainConn, timeout, container.Action)).Methods(http.MethodPost)
+	api.HandleFunc("/container/{name}", chain(chainConn, timeout, container.Patch)).Methods(http.MethodPatch)
 
 	api.HandleFunc("/image", chain(chainConn, timeout, image.List)).Methods(http.MethodGet)
 	api.HandleFunc("/image/pull", chainWs(chainConn, wsTimeout, image.Pull)).Methods(http.MethodGet)
