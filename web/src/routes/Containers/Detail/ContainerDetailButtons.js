@@ -153,9 +153,11 @@ export default function ContainerDetailButtons() {
                     }
                     default:
                 }
-                const msg = (<span>
-                    Container <b>{container.Name}</b> ({container.Id.substring(0, 12)}) {actionTypeText}.
-                </span>);
+                const msg = (
+                    <span>
+                        Container <b>{container.Name}</b> ({container.Id.substring(0, 12)}) {actionTypeText}.
+                    </span>
+                );
                 enqueueSnackbar(msg, {
                     variant: 'success'
                 });

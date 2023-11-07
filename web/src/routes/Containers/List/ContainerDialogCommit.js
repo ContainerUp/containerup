@@ -51,9 +51,11 @@ export default function ContainerDialogCommit({open, containerName, containerIdS
         }, ac)
             .then(() => {
                 handleDialogClose();
-                const msg = (<span>
-                    Container <b>{containerName}</b> ({containerIdShort}) has been committed to image <b>{tag}</b>.
-                </span>);
+                const msg = (
+                    <span>
+                        Container <b>{containerName}</b> ({containerIdShort}) has been committed to image <b>{tag}</b>.
+                    </span>
+                );
                 enqueueSnackbar(msg, {
                     variant: 'success'
                 });

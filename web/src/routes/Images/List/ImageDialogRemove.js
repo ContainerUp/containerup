@@ -45,13 +45,17 @@ export default function ImageDialogRemove({open, image, onClose}) {
         dataModel.imageAction(image.idShort, args, ac)
             .then(d => {
                 onClose();
-                let msg = (<span>
-                    Image <b>{image.idShort}</b> {d}.
-                </span>);
+                let msg = (
+                    <span>
+                        Image <b>{image.idShort}</b> {d}.
+                    </span>
+                );
                 if (image.nameOrId !== image.idShort) {
-                    msg = (<span>
-                        Image <b>{image.nameOrId}</b> ({image.idShort}) {d}.
-                    </span>);
+                    msg = (
+                        <span>
+                            Image <b>{image.nameOrId}</b> ({image.idShort}) {d}.
+                        </span>
+                    );
                 }
                 enqueueSnackbar(msg, {variant: 'success'});
             })

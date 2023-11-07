@@ -125,9 +125,11 @@ export default function ContainerActions({c}) {
                     }
                     default:
                 }
-                const msg = (<span>
-                    Container <b>{actionTarget.Names[0]}</b> ({actionTarget.idShort}) {actionTypeText}.
-                </span>);
+                const msg = (
+                    <span>
+                        Container <b>{actionTarget.Names[0]}</b> ({actionTarget.idShort}) {actionTypeText}.
+                    </span>
+                );
                 enqueueSnackbar(msg, {
                     variant: 'success'
                 });

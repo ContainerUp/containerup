@@ -51,9 +51,11 @@ export default function ImageDialogTag({open, imageIdShort, onClose}) {
         }, ac)
             .then(() => {
                 handleDialogClose();
-                const msg = (<span>
-                    Tag <b>{tag}</b> added to <b>{imageIdShort}</b>.
-                </span>);
+                const msg = (
+                    <span>
+                        Tag <b>{tag}</b> added to <b>{imageIdShort}</b>.
+                    </span>
+                );
                 enqueueSnackbar(msg, {variant: 'success'});
             })
             .catch(err => {

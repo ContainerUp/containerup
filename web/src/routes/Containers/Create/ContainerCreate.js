@@ -86,9 +86,11 @@ const CreateAction = () => {
         }, ac)
             .then(data => {
                 navigate('/containers');
-                const msg = (<span>
-                    Container <b>{name}</b> ({data.Id.substring(0, 12)}) has been created.
-                </span>);
+                const msg = (
+                    <span>
+                        Container <b>{name}</b> ({data.Id.substring(0, 12)}) has been created.
+                    </span>
+                );
                 enqueueSnackbar(msg, {variant: 'success'});
                 if (data.StartErr) {
                     enqueueSnackbar(data.StartErr, {variant: 'error'});
