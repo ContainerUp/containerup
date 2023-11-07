@@ -1,9 +1,13 @@
-name: CI
+name: Continuous Integration
 
 on:
   push:
     branches: ["main"]
   pull_request:
+
+concurrency:
+  group: ci
+  cancel-in-progress: true
 
 jobs:
   build-backend:
