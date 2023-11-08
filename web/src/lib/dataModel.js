@@ -5,7 +5,7 @@ import {receiveOnlyWebsocket} from "./wsHelper";
 
 const prefix = '/api';
 const sessionKeyName = 'containerup_key';
-let loginKey = sessionStorage.getItem(sessionKeyName);
+let loginKey = localStorage.getItem(sessionKeyName);
 
 const errors = {
     errNoLogin: new Error('not logged in'),
@@ -25,7 +25,7 @@ const login = (username, password) => {
     })
         .then(resp => {
             loginKey = resp.data.key;
-            sessionStorage.setItem(sessionKeyName, loginKey);
+            localStorage.setItem(sessionKeyName, loginKey);
         });
 };
 
@@ -36,7 +36,7 @@ const logout = () => {
     const key = loginKey;
 
     loginKey = '';
-    sessionStorage.removeItem(sessionKeyName);
+    localStorage.removeItem(sessionKeyName);
 
     return axios.post(prefix + '/logout', {
     }, {
