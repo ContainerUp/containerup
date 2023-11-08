@@ -46,6 +46,8 @@ export default function Login() {
                 if (error.response) {
                     if (error.response.status === 401) {
                         e = "Incorrect username or password";
+                    } else {
+                        e = error.response.data;
                     }
                 }
                 enqueueSnackbar(e, {
