@@ -89,6 +89,21 @@ const checkNow = ab => {
     }
     updateActions.setChecking();
 
+    if (process.env.REACT_APP_CONTAINERUP_DEMO) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve({
+                    demo: {
+                        version: process.env.REACT_APP_CONTAINERUP_VERSION + '-new',
+                        image: 'quay.io/containerup/demo:latest',
+                        changelog: 'This is for demo only!\nNo real update will be performed!',
+                        compatible_version: 'v0.1.0'
+                    }
+                });
+            }, 1000);
+        });
+    }
+
     return dataModel.systemCheckUpdate(ab);
 };
 
@@ -117,6 +132,9 @@ let forceChannel = '';
 export const getChannel = version => {
     if (forceChannel) {
         return forceChannel;
+    }
+    if (process.env.REACT_APP_CONTAINERUP_DEMO) {
+        return 'demo';
     }
     if (version === 'dev') {
         return 'dev';
