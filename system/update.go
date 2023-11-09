@@ -132,6 +132,8 @@ func UpdateAction(w http.ResponseWriter, req *http.Request) {
 		str := fmt.Sprintf("updater not running, status %s exit_code %d", inspectUpdater.State.Status, inspectUpdater.State.ExitCode)
 		http.Error(w, str, http.StatusInternalServerError)
 	}
+
+	utils.Return(w, true)
 }
 
 func createUpdater(ctx context.Context, image string, inspect *define.InspectContainerData) (string, error) {
