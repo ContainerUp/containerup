@@ -1,0 +1,104 @@
+name: Unstable container
+
+on:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: unstable
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Metadata
+        id: metadata
+        run: |
+          BUILD_NUM=$(date -u +%Y%m%d%H%M%S)
+          echo "BUILD_NUM=$BUILD_NUM (env)"
+          echo "BUILD_NUM=$BUILD_NUM" >> "$GITHUB_ENV"
+          
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          echo "COMMIT_HASH=$COMMIT_HASH (env)"
+          echo "COMMIT_HASH=$COMMIT_HASH" >> ${GITHUB_ENV}
+          
+          VERSION=$(cat VERSION)
+          VERSION="${VERSION}-unstable"
+          echo "VERSION=${VERSION}"
+          echo -n "${VERSION}" > VERSION
+          
+          echo "IMAGE_TAG=unstable-${COMMIT_HASH} (ctx)"
+          echo "IMAGE_TAG=unstable-${COMMIT_HASH}" >> ${GITHUB_OUTPUT}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install npm dependencies
+        run: |
+          cd web
+          npm install
+
+      - name: Build frontend
+        run: |
+          export REACT_APP_CONTAINERUP_VERSION=$(cat VERSION)
+          export REACT_APP_CONTAINERUP_BUILD=${BUILD_NUM}
+          export REACT_APP_CONTAINERUP_COMMIT=${COMMIT_HASH}
+          export GENERATE_SOURCEMAP=false
+          cd web
+          npm run build
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.19.0'
+          check-latest: true
+
+      - name: Build project for linux-amd64
+        run: ./build.sh
+        env:
+          GOARCH: amd64
+          GOOS: linux
+
+      - name: Build project for linux-arm64
+        run: ./build.sh
+        env:
+          GOARCH: arm64
+          GOOS: linux
+
+      - name: Build project for linux-arm
+        run: ./build.sh
+        env:
+          GOARCH: arm
+          GOOS: linux
+
+      - name: Build containers
+        uses: ContainerUp/podman-in-podman-build@v1
+        with:
+          podman-image: quay.io/containers/podman:v4.6
+          platforms: |
+            linux/amd64
+            linux/arm64
+            linux/arm
+          repository: unstable
+          tags: |
+            latest
+            ${{ steps.metadata.outputs.IMAGE_TAG }}
+          labels: |
+            quay.expires-after=7d
+
+      - name: Push to quay.io
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: unstable
+          tags: latest ${{ steps.metadata.outputs.IMAGE_TAG }}
+          registry: quay.io/containerup
+          username: containerup+github
+          password: ${{ secrets.QUAY_IO_PASSWORD }}
