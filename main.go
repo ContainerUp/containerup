@@ -80,6 +80,7 @@ func main() {
 
 	api.HandleFunc("/ping", update.Pong)
 	api.HandleFunc("/login", chainLogin(timeout, login.Login)).Methods(http.MethodPost)
+	api.HandleFunc("/logout", chainLogin(timeout, login.Logout)).Methods(http.MethodPost)
 
 	api.HandleFunc("/container", chain(chainConn, timeout, container.List)).Methods(http.MethodGet)
 	api.HandleFunc("/container", chain(chainConn, timeout, container.Create)).Methods(http.MethodPost)
