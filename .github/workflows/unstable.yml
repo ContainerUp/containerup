@@ -98,7 +98,16 @@ jobs:
         uses: redhat-actions/push-to-registry@v2
         with:
           image: unstable
-          tags: latest ${{ steps.metadata.outputs.IMAGE_TAG }}
+          tags: ${{ steps.metadata.outputs.IMAGE_TAG }}
+          registry: quay.io/containerup
+          username: containerup+github
+          password: ${{ secrets.QUAY_IO_PASSWORD }}
+
+      - name: Push to quay.io
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: unstable
+          tags: latest
           registry: quay.io/containerup
           username: containerup+github
           password: ${{ secrets.QUAY_IO_PASSWORD }}
