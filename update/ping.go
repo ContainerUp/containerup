@@ -4,6 +4,7 @@ import (
 	"containerup/system"
 	"containerup/utils"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,17 +12,30 @@ import (
 	"time"
 )
 
-func Ping() {
+func Ping(isTls bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://127.0.0.1:3876/api/ping", nil)
+	pingUrl := "http://127.0.0.1:3876/api/ping"
+	if isTls {
+		pingUrl = "https://127.0.0.1:3876/api/ping"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pingUrl, nil)
 	if err != nil {
 		fmt.Printf("Cannot create http request: %v\n", err)
 		os.Exit(1)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	httpClient := http.Client{}
+	if isTls {
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		tr.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		httpClient.Transport = tr
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		fmt.Printf("Cannot do http request: %v\n", err)
 		os.Exit(1)

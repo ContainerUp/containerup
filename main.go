@@ -19,13 +19,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 )
 
 var (
-	fListen       = flag.String("listen", "127.0.0.1:3876", "Address to listen.")
+	fListen       = flag.String("listen", "127.0.0.1:3876", "Address and port to listen.")
 	fPodman       = flag.String("podman", "unix:/run/podman/podman.sock", "`URL` of Podman.")
 	vLegacy       = flag.Bool("v3", false, "Connect to Podman with a v3 legacy version.")
 	fUsername     = flag.String("username", "podman", "The username to be used on the web.")
@@ -35,6 +34,8 @@ var (
 	fGenerateHash = flag.Bool("generate-hash", false,
 		"Generate a hash from your password, then exit. "+
 			"For security reasons, you have to input your password interactively.")
+	fTlsCert = flag.String("tls-cert", "", "Path of TLS certificate")
+	fTlsKey  = flag.String("tls-key", "", "Path of TLS key")
 	fVersion = flag.Bool("version", false, "Show the version of ContainerUp, then exit.")
 )
 
@@ -55,7 +56,11 @@ func main() {
 	}
 
 	if val := os.Getenv("CONTAINERUP_UPDATE_PING"); val != "" {
-		update.Ping()
+		tls := false
+		if v := os.Getenv("CONTAINERUP_UPDATE_TLS"); v != "" {
+			tls = true
+		}
+		update.Ping(tls)
 	}
 
 	if *vLegacy {
@@ -106,18 +111,9 @@ func main() {
 
 	http.Handle("/", r)
 
-	var wg sync.WaitGroup
 	srv := http.Server{Addr: *fListen}
 
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		err = srv.ListenAndServe()
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
@@ -127,7 +123,12 @@ func main() {
 		log.Printf("shutdown: %v", err)
 	}()
 
-	wg.Wait()
+	if *fTlsCert != "" {
+		system.IsTls = true
+		err = srv.ListenAndServeTLS(*fTlsCert, *fTlsKey)
+	} else {
+		err = srv.ListenAndServe()
+	}
 	if !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("failed to listen: %v", err)
 	}

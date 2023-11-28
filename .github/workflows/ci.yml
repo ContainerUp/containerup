@@ -32,12 +32,19 @@ jobs:
           
           echo "Build image"
           podman build -t $IMAGE .
+          
+          echo "Generate TLS cert/key"
+          mkdir tls
+          openssl req -x509 -newkey rsa:4096 -keyout tls/key.pem -out tls/cert.pem -sha256 -days 3650 -nodes -subj "/C=US/ST=Oregon/L=Portland/O=Company Name/OU=Org/CN=www.example.com"
 
           echo "Start old container"
           PWD_HASH='$2a$10$tRhTPH7xGTJnNUUWgH/96.klhqU2z7zEPTwqa0/KfzJa4RHrVQF0O'
           SOCKET_VOLUME="${XDG_RUNTIME_DIR}/podman/podman.sock:/run/podman/podman.sock"
           ENV_V3="CONTAINERUP_PODMAN_V3=1"
-          ctnup_old=$(podman run -d --name containerup -e "CONTAINERUP_PASSWORD_HASH=${PWD_HASH}" -e "$ENV_V3" -v "$SOCKET_VOLUME" $IMAGE)
+          TLS_CERT="CONTAINERUP_TLS_CERT=/tls/cert.pem"
+          TLS_KEY="CONTAINERUP_TLS_KEY=/tls/key.pem"
+          TLS_VOLUME="./tls:/tls"
+          ctnup_old=$(podman run -d --name containerup -e "CONTAINERUP_PASSWORD_HASH=${PWD_HASH}" -e "$TLS_CERT" -e "$TLS_KEY" -e "$ENV_V3" -v "$SOCKET_VOLUME" -v "$TLS_VOLUME" $IMAGE)
           echo $ctnup_old
 
           echo "Do upgrade"

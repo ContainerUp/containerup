@@ -127,7 +127,12 @@ func updater() (success bool) {
 		time.Sleep(2 * time.Second)
 		log.Printf("Checking the status of the new container")
 
-		respStdOut, respStdErr, err := containerExec(ctx, rpt.ID, []string{"CONTAINERUP_UPDATE_PING=1"}, []string{"/usr/bin/containerup"})
+		envs := []string{"CONTAINERUP_UPDATE_PING=1"}
+		if val := os.Getenv("CONTAINERUP_UPDATE_TLS"); val != "" {
+			envs = append(envs, "CONTAINERUP_UPDATE_TLS=1")
+		}
+
+		respStdOut, respStdErr, err := containerExec(ctx, rpt.ID, envs, []string{"/usr/bin/containerup"})
 		if err != nil {
 			log.Printf("Cannot check the status: %v", err)
 			continue
@@ -192,6 +197,22 @@ func createNewContainer(ctx context.Context, image string, current *define.Inspe
 		createCmd = append(createCmd, "--volume", fmt.Sprintf("%s:%s", src, system.URL_PODMAN))
 	} else {
 		return rpt, errors.New("cannot find URL of Podman")
+	}
+
+	for _, mount := range getOtherVolumeMounts(current) {
+		ro := ""
+		if !mount.RW {
+			ro = ":ro"
+		}
+		s.Mounts = append(s.Mounts, spec.Mount{
+			Destination: mount.Destination,
+			Type:        mount.Type,
+			Source:      mount.Source,
+			Options:     mount.Options,
+			UIDMappings: nil,
+			GIDMappings: nil,
+		})
+		createCmd = append(createCmd, "--volume", fmt.Sprintf("%s:%s%s", mount.Source, mount.Destination, ro))
 	}
 
 	if hostPorts, err := getCurrentPorts(current); err == nil {
@@ -289,6 +310,26 @@ func getCurrentEnv(data *define.InspectContainerData, key string) string {
 		}
 	}
 	return ""
+}
+
+func getOtherVolumeMounts(data *define.InspectContainerData) []define.InspectMount {
+	var ret []define.InspectMount
+	for _, m := range data.Mounts {
+		if m.Type == "bind" && m.Destination != system.URL_PODMAN && m.Driver == "" && m.Mode == "" {
+			unsupported := false
+			for _, opt := range m.Options {
+				if opt != "rbind" {
+					unsupported = true
+					break
+				}
+			}
+			if unsupported {
+				break
+			}
+			ret = append(ret, m)
+		}
+	}
+	return ret
 }
 
 type hostPort struct {
