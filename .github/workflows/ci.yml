@@ -60,7 +60,7 @@ jobs:
           sleep 10
           
           echo "Check result"
-          (podman inspect containerup-updater >/dev/null 2>&1) && echo "containerup-updater is not deleted" && podman ps -a && podman logs containerup-updater && exit 1 || echo "containerup-updater is deleted"
+          (podman inspect containerup-updater >/dev/null 2>&1) && echo "containerup-updater is not deleted" && podman ps -a && podman logs containerup-updater && podman logs containerup-update-failure && exit 1 || echo "containerup-updater is deleted"
           (podman inspect containerup-old >/dev/null 2>&1) && echo "containerup-old is not deleted" && podman ps -a && exit 1 || echo "containerup-old is deleted"
           (podman inspect containerup-update-failure >/dev/null 2>&1) && echo "containerup-update-failure is not deleted" && podman ps -a && exit 1 || echo "containerup-update-failure is deleted"
 
