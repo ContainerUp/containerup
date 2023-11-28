@@ -40,15 +40,16 @@ func Ping(isTls bool) {
 		fmt.Printf("Cannot do http request: %v\n", err)
 		os.Exit(1)
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Unexpected status: %s\n", resp.Status)
-		os.Exit(1)
-	}
+	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("Cannot read response: %v\n", err)
+		os.Exit(1)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Unexpected status: %s\nResponse data: %s", resp.Status, data)
 		os.Exit(1)
 	}
 
