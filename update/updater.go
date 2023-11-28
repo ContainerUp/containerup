@@ -130,6 +130,8 @@ func updater() (success bool) {
 		envs := []string{"CONTAINERUP_UPDATE_PING=1"}
 		respStdOut, respStdErr, err := containerExec(ctx, rpt.ID, envs, []string{"/usr/bin/containerup"})
 		if err != nil {
+			log.Printf("Result stdout: %s", respStdOut)
+			log.Printf("Result stderr: %s", respStdErr)
 			log.Printf("Cannot check the status: %v", err)
 			continue
 		}
@@ -525,11 +527,11 @@ func containerExec(ctx context.Context, nameOrId string, envs, cmds []string) (s
 	}
 
 	if inspect.ExitCode != 0 {
-		return "", "", fmt.Errorf("exit code %d", inspect.ExitCode)
+		return outputStdOut, outputStdErr, fmt.Errorf("exit code %d", inspect.ExitCode)
 	}
 
 	if err2 != nil || err3 != nil {
-		return "", "", fmt.Errorf("cannot read outputStdOut: %v %v", err2, err3)
+		return outputStdOut, outputStdErr, fmt.Errorf("cannot read outputStdOut: %v %v", err2, err3)
 	}
 
 	return outputStdOut, outputStdErr, nil
