@@ -12,12 +12,14 @@ import (
 	"time"
 )
 
-func Ping(isTls bool) {
+func Ping() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	pingUrl := "http://127.0.0.1:3876/api/ping"
-	if isTls {
+	isTls := false
+	if tlsCert := os.Getenv(system.ENV_TLS_CERT); tlsCert != "" {
+		isTls = true
 		pingUrl = "https://127.0.0.1:3876/api/ping"
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pingUrl, nil)

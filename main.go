@@ -56,7 +56,7 @@ func main() {
 	}
 
 	if val := os.Getenv("CONTAINERUP_UPDATE_PING"); val != "" {
-		update.Ping(*fTlsCert != "")
+		update.Ping()
 	}
 
 	if *vLegacy {
