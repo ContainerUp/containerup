@@ -56,18 +56,14 @@ func main() {
 	}
 
 	if val := os.Getenv("CONTAINERUP_UPDATE_PING"); val != "" {
-		tls := false
-		if v := os.Getenv("CONTAINERUP_UPDATE_TLS"); v != "" {
-			tls = true
-		}
-		update.Ping(tls)
+		update.Ping(*fTlsCert != "")
 	}
 
 	if *vLegacy {
 		adapter.UseLegacy()
 	}
 
-	if val := os.Getenv("CONTAINER_UPDATE_RUN"); val != "" {
+	if val := os.Getenv("CONTAINERUP_UPDATE_RUN"); val != "" {
 		update.Updater()
 	}
 
@@ -124,7 +120,6 @@ func main() {
 	}()
 
 	if *fTlsCert != "" {
-		system.IsTls = true
 		err = srv.ListenAndServeTLS(*fTlsCert, *fTlsKey)
 	} else {
 		err = srv.ListenAndServe()

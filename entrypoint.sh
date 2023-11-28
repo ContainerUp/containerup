@@ -9,7 +9,7 @@ if [[ -n "$CONTAINERUP_PODMAN_V3" ]]; then
     ARG_V3="-v3"
 fi
 
-if [[ -n "$CONTAINER_UPDATE_RUN" ]]; then
+if [[ -n "$CONTAINERUP_UPDATE_RUN" ]]; then
     exec /usr/bin/containerup $ARG_V3
 fi
 

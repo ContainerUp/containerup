@@ -152,11 +152,6 @@ func createUpdater(ctx context.Context, image string, inspect *define.InspectCon
 	createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", ENV_UPDATE_IMAGE, image))
 	createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", ENV_UPDATE_CURRENT_ID, inspect.ID))
 
-	if IsTls {
-		s.Env[ENV_UPDATE_TLS] = "1"
-		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", ENV_UPDATE_TLS, "1"))
-	}
-
 	if adapter.IsUsingLegacy() {
 		s.Env[ENV_PODMAN_V3] = "1"
 		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", ENV_PODMAN_V3, "1"))
@@ -184,16 +179,17 @@ func createUpdater(ctx context.Context, image string, inspect *define.InspectCon
 }
 
 const (
-	ENV_UPDATE_RUN        = "CONTAINER_UPDATE_RUN"
+	ENV_UPDATE_RUN        = "CONTAINERUP_UPDATE_RUN"
 	ENV_UPDATE_IMAGE      = "CONTAINERUP_UPDATE_IMAGE"
 	ENV_UPDATE_CURRENT_ID = "CONTAINERUP_UPDATE_CURRENT_ID"
-	ENV_UPDATE_TLS        = "CONTAINERUP_UPDATE_TLS"
 )
 
 const (
 	ENV_USERNAME      = "CONTAINERUP_USERNAME"
 	ENV_PASSWORD_HASH = "CONTAINERUP_PASSWORD_HASH"
 	ENV_PODMAN_V3     = "CONTAINERUP_PODMAN_V3"
+	ENV_TLS_CERT      = "CONTAINERUP_TLS_CERT"
+	ENV_TLS_KEY       = "CONTAINERUP_TLS_KEY"
 
 	URL_PODMAN = "/run/podman/podman.sock"
 )

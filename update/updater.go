@@ -128,10 +128,6 @@ func updater() (success bool) {
 		log.Printf("Checking the status of the new container")
 
 		envs := []string{"CONTAINERUP_UPDATE_PING=1"}
-		if val := os.Getenv("CONTAINERUP_UPDATE_TLS"); val != "" {
-			envs = append(envs, "CONTAINERUP_UPDATE_TLS=1")
-		}
-
 		respStdOut, respStdErr, err := containerExec(ctx, rpt.ID, envs, []string{"/usr/bin/containerup"})
 		if err != nil {
 			log.Printf("Cannot check the status: %v", err)
@@ -188,6 +184,20 @@ func createNewContainer(ctx context.Context, image string, current *define.Inspe
 		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", system.ENV_PODMAN_V3, val))
 	}
 
+	isTls := false
+	if tlsCert := getCurrentEnv(current, system.ENV_TLS_CERT); tlsCert != "" {
+		tlsKey := getCurrentEnv(current, system.ENV_TLS_KEY)
+		if tlsKey == "" {
+			return rpt, fmt.Errorf("empty %s while %s is not empty", system.ENV_TLS_KEY, system.ENV_TLS_CERT)
+		}
+		isTls = true
+
+		s.Env[system.ENV_TLS_CERT] = tlsCert
+		s.Env[system.ENV_TLS_KEY] = tlsKey
+		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", system.ENV_TLS_CERT, tlsCert))
+		createCmd = append(createCmd, "--env", fmt.Sprintf("%s=%s", system.ENV_TLS_KEY, tlsKey))
+	}
+
 	if src := system.GetCurrentVolumePodmanURL(current); src != "" {
 		s.Mounts = []spec.Mount{{
 			Destination: system.URL_PODMAN,
@@ -199,6 +209,7 @@ func createNewContainer(ctx context.Context, image string, current *define.Inspe
 		return rpt, errors.New("cannot find URL of Podman")
 	}
 
+	mountCount := 0
 	for _, mount := range getOtherVolumeMounts(current) {
 		ro := ""
 		if !mount.RW {
@@ -213,6 +224,10 @@ func createNewContainer(ctx context.Context, image string, current *define.Inspe
 			GIDMappings: nil,
 		})
 		createCmd = append(createCmd, "--volume", fmt.Sprintf("%s:%s%s", mount.Source, mount.Destination, ro))
+		mountCount++
+	}
+	if mountCount == 0 && isTls {
+		return rpt, errors.New("find zero volume while TLS is enabled")
 	}
 
 	if hostPorts, err := getCurrentPorts(current); err == nil {

@@ -52,7 +52,7 @@ jobs:
             -e "CONTAINERUP_UPDATE_IMAGE=$IMAGE" \
             -e "CONTAINERUP_UPDATE_CURRENT_ID=${ctnup_old}" \
             -e "$ENV_V3" \
-            -e "CONTAINER_UPDATE_RUN=1" \
+            -e "CONTAINERUP_UPDATE_RUN=1" \
             -v "$SOCKET_VOLUME" \
             $IMAGE
           
