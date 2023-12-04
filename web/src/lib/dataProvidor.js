@@ -2,6 +2,10 @@ import dataModel from "./dataModel";
 
 const makeAioConnection = (onData, onOpen, onError, onClose) => {
     const [loginKey, prefix] = dataModel.getLoginKeyAndPrefix();
+    if (!loginKey) {
+        setTimeout(() => onError(dataModel.errors.errNoLogin));
+        return [() => {}, () => {}];
+    }
 
     let protocol = 'ws:';
     if (window.location.protocol === 'https:') {
