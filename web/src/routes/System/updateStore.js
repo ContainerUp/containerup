@@ -56,6 +56,7 @@ export const doBackgroundUpdateCheck = () => {
                 const latestInfo = resp1[channel];
                 if (!latestInfo) {
                     updateActions.setUpdate(null);
+                    console.log("Cannot check update: channel not available");
                     return;
                 }
                 if (latestInfo.version !== currentVersion) {
@@ -114,6 +115,7 @@ export const manuallyCheck = (currentVersion) => {
             const latestInfo = resp[channel];
             if (!latestInfo) {
                 updateActions.setUpdate(null);
+                console.log("Cannot check update: channel not available");
                 return null;
             }
             if (latestInfo.version !== currentVersion) {
@@ -123,7 +125,7 @@ export const manuallyCheck = (currentVersion) => {
     })
         .catch(error => {
             updateActions.setUpdate(null);
-            console.log("failed to check update: " + error.toString());
+            console.log("Cannot check update: " + error.toString());
         });
 };
 
@@ -138,6 +140,9 @@ export const getChannel = version => {
     }
     if (version === 'dev') {
         return 'dev';
+    }
+    if (/^v\d+\.\d+\.\d+-unstable$/.test(version)) {
+        return 'unstable';
     }
     if (/^v\d+\.\d+\.\d+$/.test(version)) {
         return 'stable';
