@@ -34,7 +34,8 @@ var (
 	fGenerateHash = flag.Bool("generate-hash", false,
 		"Generate a hash from your password, then exit. "+
 			"For security reasons, you have to input your password interactively.")
-	fTlsCert = flag.String("tls-cert", "", "Path of TLS certificate")
+	fTlsCert = flag.String("tls-cert", "", "Path of TLS certificate. "+
+		"When specified, the listening port will serve TLS instead of plaintext.")
 	fTlsKey  = flag.String("tls-key", "", "Path of TLS key")
 	fVersion = flag.Bool("version", false, "Show the version of ContainerUp, then exit.")
 )
